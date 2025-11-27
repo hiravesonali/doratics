@@ -23,6 +23,7 @@ export default defineNuxtConfig({
     clerkSecretKey: process.env.CLERK_SECRET_KEY || '',
     stripeSecretKey: process.env.STRIPE_SECRET_KEY || '',
     stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+    assetsDomain: process.env.ASSETS_DOMAIN || 'assets.localhost:3000',
 
     // Public keys (exposed to client)
     public: {

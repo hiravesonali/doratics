@@ -60,7 +60,8 @@ export default defineEventHandler(async (event) => {
 
     // Return public URL
     // In production, you'd use a custom domain or R2 public bucket URL
-    const publicUrl = `https://assets.yourapp.com/${uniqueFilename}`
+    const config = useRuntimeConfig()
+    const publicUrl = `https://${config.assetsDomain}/${uniqueFilename}`
 
     return {
       success: true,
