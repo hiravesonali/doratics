@@ -28,6 +28,7 @@ export default defineNuxtConfig({
     public: {
       clerkPublishableKey: process.env.CLERK_PUBLISHABLE_KEY || '',
       stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
+      baseDomain: process.env.BASE_DOMAIN || 'localhost:3000',
       appDomain: process.env.APP_DOMAIN || 'localhost:3000',
       adminDomain: process.env.ADMIN_DOMAIN || 'app.localhost:3000',
     },

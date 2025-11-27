@@ -30,7 +30,7 @@
 
           <div class="mb-4">
             <span class="text-sm text-gray-600">
-              {{ project.subdomain }}.yourapp.com
+              {{ project.subdomain }}.{{ config.public.baseDomain }}
             </span>
           </div>
 
@@ -42,7 +42,7 @@
               Edit
             </NuxtLink>
             <a
-              :href="`https://${project.subdomain}.yourapp.com`"
+              :href="`http://${project.subdomain}.${config.public.baseDomain}`"
               target="_blank"
               class="flex-1 text-center border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 transition"
             >
@@ -72,6 +72,11 @@
           <h2 class="text-2xl font-bold mb-4">Create New Project</h2>
 
           <form @submit.prevent="createProject" class="space-y-4">
+            <!-- Error Message Display -->
+            <div v-if="createError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+              <p class="font-semibold">{{ createError }}</p>
+            </div>
+
             <div>
               <label class="block text-sm font-medium mb-2">Project Name</label>
               <input
@@ -81,6 +86,7 @@
                 class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                 placeholder="My Handyman Business"
               />
+              <p class="text-xs text-gray-500 mt-1">1-100 characters</p>
             </div>
 
             <div>
@@ -110,8 +116,9 @@
                   class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   placeholder="my-business"
                 />
-                <span class="text-gray-500">.yourapp.com</span>
+                <span class="text-gray-500">.{{ config.public.baseDomain }}</span>
               </div>
+              <p class="text-xs text-gray-500 mt-1">3-50 characters, lowercase letters, numbers, and hyphens only</p>
             </div>
 
             <div class="flex gap-2 pt-4">
@@ -142,9 +149,11 @@ definePageMeta({
   layout: false,
 })
 
+const config = useRuntimeConfig()
 const showCreateModal = ref(false)
 const loading = ref(false)
 const creating = ref(false)
+const createError = ref('')
 
 const newProject = ref({
   name: '',
@@ -163,6 +172,7 @@ const projects = computed(() => projectsData.value?.data || [])
 
 async function createProject() {
   creating.value = true
+  createError.value = ''
   try {
     await $fetch('/api/projects', {
       method: 'POST',
@@ -181,7 +191,14 @@ async function createProject() {
 
     await refresh()
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to create project')
+    // Display validation errors properly
+    if (error.data?.message) {
+      createError.value = error.data.message
+    } else if (error.data?.statusMessage) {
+      createError.value = error.data.statusMessage
+    } else {
+      createError.value = 'Failed to create project. Please check your input and try again.'
+    }
   } finally {
     creating.value = false
   }

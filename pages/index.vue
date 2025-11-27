@@ -72,6 +72,32 @@
 </template>
 
 <script setup lang="ts">
+interface PageData {
+  success: boolean
+  data: {
+    id: string
+    projectId: string
+    slug: string
+    title: string
+    layoutJson: Record<string, unknown>
+    seoTitle: string
+    seoDescription: string
+    status: string
+    createdAt: Date
+    updatedAt: Date
+  }
+  headerTheme?: {
+    id: string
+    name: string
+    html: string
+  }
+  footerTheme?: {
+    id: string
+    name: string
+    html: string
+  }
+}
+
 // Check if this is the main domain (without subdomain)
 const isMainDomain = computed(() => {
   if (typeof window !== 'undefined') {
@@ -84,7 +110,7 @@ const isMainDomain = computed(() => {
 })
 
 // Fetch page data for subdomains
-const { data: pageData } = await useFetch('/api/public/page', {
+const { data: pageData } = await useFetch<PageData>('/api/public/page', {
   query: { slug: '/' },
   server: true,
   lazy: false,
@@ -92,7 +118,7 @@ const { data: pageData } = await useFetch('/api/public/page', {
   immediate: !isMainDomain.value,
 })
 
-const page = computed(() => (pageData.value as any)?.data)
-const headerTheme = computed(() => (pageData.value as any)?.headerTheme)
-const footerTheme = computed(() => (pageData.value as any)?.footerTheme)
+const page = computed(() => pageData.value?.data)
+const headerTheme = computed(() => pageData.value?.headerTheme)
+const footerTheme = computed(() => pageData.value?.footerTheme)
 </script>

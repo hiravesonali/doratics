@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { projects } from '../../database/schema'
+import { projects, pages } from '../../database/schema'
 
 const createProjectSchema = z.object({
   name: z.string().min(1).max(100),
@@ -45,6 +45,22 @@ export default defineEventHandler(async (event) => {
   }
 
   await db.insert(projects).values(newProject)
+
+  // Automatically create a homepage for the new project
+  const homePage = {
+    id: nanoid(),
+    projectId: newProject.id,
+    slug: '/',
+    title: 'Home',
+    layoutJson: { html: `Welcome to ${validatedData.name}` }, // Empty HTML for PageBuilder
+    seoTitle: validatedData.name,
+    seoDescription: `Welcome to ${validatedData.name}`,
+    status: 'published' as const,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }
+
+  await db.insert(pages).values(homePage)
 
   return {
     success: true,

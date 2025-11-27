@@ -11,7 +11,7 @@
               ← Back to Projects
             </NuxtLink>
             <h1 class="text-3xl font-bold text-gray-900">{{ project.name }}</h1>
-            <p class="text-gray-600 mt-1">{{ project.subdomain }}.yourapp.com</p>
+            <p class="text-gray-600 mt-1">{{ project.subdomain }}.{{ config.public.baseDomain }}</p>
           </div>
 
           <div class="flex gap-2">
@@ -23,7 +23,7 @@
               {{ publishing ? 'Publishing...' : 'Publish' }}
             </button>
             <a
-              :href="`https://${project.subdomain}.yourapp.com`"
+              :href="`http://${project.subdomain}.${config.public.baseDomain}`"
               target="_blank"
               class="border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50"
             >
@@ -143,7 +143,7 @@
               class="w-full px-4 py-2 border rounded-lg"
             />
             <p class="text-sm text-gray-500 mt-1">
-              Add a CNAME record pointing to yourapp.com
+              Add a CNAME record pointing to {{ config.public.baseDomain }}
             </p>
           </div>
 
@@ -247,6 +247,11 @@
         <h3 class="text-xl font-semibold mb-4">Create New Page</h3>
 
         <form @submit.prevent="createPage" class="space-y-4">
+          <!-- Error Message Display -->
+          <div v-if="pageCreateError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+            <p class="font-semibold">{{ pageCreateError }}</p>
+          </div>
+
           <div>
             <label class="block text-sm font-medium mb-2">Page Title *</label>
             <input
@@ -256,6 +261,7 @@
               placeholder="e.g., Home, About Us, Services"
               class="w-full px-4 py-2 border rounded-lg"
             />
+            <p class="text-xs text-gray-500 mt-1">1-200 characters</p>
           </div>
 
           <div>
@@ -264,11 +270,10 @@
               v-model="newPage.slug"
               type="text"
               required
-              placeholder="e.g., home, about-us, services"
-              pattern="[a-z0-9-]+"
+              placeholder="e.g., /home, /about-us, /services"
               class="w-full px-4 py-2 border rounded-lg"
             />
-            <p class="text-xs text-gray-500 mt-1">Only lowercase letters, numbers, and hyphens</p>
+            <p class="text-xs text-gray-500 mt-1">Auto-sanitizes: converts to lowercase, replaces spaces with hyphens. Use '/' for homepage.</p>
           </div>
 
           <div class="flex gap-2 justify-end">
@@ -298,6 +303,7 @@ definePageMeta({
   layout: false,
 })
 
+const config = useRuntimeConfig()
 const route = useRoute()
 const projectId = route.params.id as string
 
@@ -307,6 +313,7 @@ const savingSettings = ref(false)
 const savingLegal = ref(false)
 const showCreatePageModal = ref(false)
 const creatingPage = ref(false)
+const pageCreateError = ref('')
 const newPage = ref({
   title: '',
   slug: '',
@@ -410,6 +417,7 @@ async function updateLegalInfo() {
 
 async function createPage() {
   creatingPage.value = true
+  pageCreateError.value = ''
   try {
     await $fetch(`/api/pages/${projectId}`, {
       method: 'POST',
@@ -421,9 +429,15 @@ async function createPage() {
     showCreatePageModal.value = false
     newPage.value = { title: '', slug: '' }
     await refreshPages()
-    alert('Page created successfully!')
   } catch (error: any) {
-    alert(error.data?.message || 'Failed to create page')
+    // Display validation errors properly
+    if (error.data?.message) {
+      pageCreateError.value = error.data.message
+    } else if (error.data?.statusMessage) {
+      pageCreateError.value = error.data.statusMessage
+    } else {
+      pageCreateError.value = 'Failed to create page. Please check your input and try again.'
+    }
   } finally {
     creatingPage.value = false
   }
