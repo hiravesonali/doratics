@@ -1,0 +1,28 @@
+name = "handymen-app"
+compatibility_date = "2025-07-15"
+pages_build_output_dir = ".output/public"
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "handymen_db"
+database_id = "your-database-id" # Run: wrangler d1 create handymen_db
+
+# R2 Storage
+[[r2_buckets]]
+binding = "HANDYMEN_ASSETS"
+bucket_name = "handymen-assets"
+preview_bucket_name = "handymen-assets-preview"
+
+# Environment Variables for production
+[env.production]
+vars = { ENVIRONMENT = "production" }
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "handymen_db_production"
+database_id = "your-production-database-id"
+
+[[env.production.r2_buckets]]
+binding = "HANDYMEN_ASSETS"
+bucket_name = "handymen-assets-production"

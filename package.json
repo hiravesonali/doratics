@@ -1,0 +1,36 @@
+{
+  "name": "handymen-app",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "generate": "nuxt generate",
+    "preview": "nuxt preview",
+    "postinstall": "nuxt prepare"
+  },
+  "dependencies": {
+    "@clerk/vue": "^1.17.0",
+    "@cloudflare/workers-types": "^4.20251127.0",
+    "@myissue/vue-website-page-builder": "^3.4.87",
+    "@nuxtjs/tailwindcss": "^6.14.0",
+    "@stripe/stripe-js": "^8.5.3",
+    "@vueuse/core": "^14.1.0",
+    "@vueuse/nuxt": "^14.1.0",
+    "better-sqlite3": "^12.4.6",
+    "drizzle-kit": "^0.31.7",
+    "drizzle-orm": "^0.44.7",
+    "nanoid": "^5.1.6",
+    "nuxt": "^4.2.1",
+    "nuxt-security": "^2.5.0",
+    "stripe": "^20.0.0",
+    "vue": "^3.5.25",
+    "vue-router": "^4.6.3",
+    "zod": "^4.1.13"
+  },
+  "packageManager": "pnpm@8.14.1+sha1.d039b38e0b20ad012ed548e44267b8d4c88b447a",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "wrangler": "^4.51.0"
+  }
+}
