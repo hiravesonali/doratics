@@ -1,15 +1,16 @@
 import { eq, and } from 'drizzle-orm'
-import { legalProfiles, projects } from '../../../database/schema'
+import { pages, projects } from '../../../database/schema'
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
   const projectId = getRouterParam(event, 'projectId')
+  const pageId = getRouterParam(event, 'pageId')
   const db = useDB()
 
-  if (!projectId) {
+  if (!projectId || !pageId) {
     throw createError({
       statusCode: 400,
-      message: 'Project ID required',
+      message: 'Project ID and Page ID required',
     })
   }
 
@@ -22,24 +23,33 @@ export default defineEventHandler(async (event) => {
       eq(projects.userId, userId)
     ))
     .limit(1)
-  const project = projectResults[0]
 
-  if (!project) {
+  if (projectResults.length === 0) {
     throw createError({
       statusCode: 404,
       message: 'Project not found',
     })
   }
 
-  const legalProfileResults = await db
+  // Fetch the page
+  const pageResults = await db
     .select()
-    .from(legalProfiles)
-    .where(eq(legalProfiles.projectId, projectId))
+    .from(pages)
+    .where(and(
+      eq(pages.id, pageId),
+      eq(pages.projectId, projectId)
+    ))
     .limit(1)
-  const legalProfile = legalProfileResults[0]
+
+  if (pageResults.length === 0) {
+    throw createError({
+      statusCode: 404,
+      message: 'Page not found',
+    })
+  }
 
   return {
     success: true,
-    data: legalProfile || null,
+    data: pageResults[0],
   }
 })

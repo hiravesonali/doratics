@@ -13,17 +13,16 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const project = await db.query.projects.findFirst({
-    where: and(
+  const result = await db
+    .select()
+    .from(projects)
+    .where(and(
       eq(projects.id, projectId),
       eq(projects.userId, userId)
-    ),
-    with: {
-      legalProfile: true,
-    },
-  })
+    ))
+    .limit(1)
 
-  if (!project) {
+  if (result.length === 0) {
     throw createError({
       statusCode: 404,
       message: 'Project not found',
@@ -32,6 +31,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    data: project,
+    data: result[0],
   }
 })

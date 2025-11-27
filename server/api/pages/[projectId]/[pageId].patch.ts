@@ -4,7 +4,7 @@ import { pages, projects } from '../../../database/schema'
 
 const updatePageSchema = z.object({
   title: z.string().min(1).max(200).optional(),
-  layoutJson: z.record(z.any()).optional(),
+  layoutJson: z.record(z.string(), z.unknown()).optional(),
   seoTitle: z.string().optional(),
   seoDescription: z.string().optional(),
   status: z.enum(['draft', 'published']).optional(),
@@ -24,12 +24,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify project ownership
-  const project = await db.query.projects.findFirst({
-    where: and(
+  const projectResults = await db
+    .select()
+    .from(projects)
+    .where(and(
       eq(projects.id, projectId),
       eq(projects.userId, userId)
-    ),
-  })
+    ))
+    .limit(1)
+  const project = projectResults[0]
 
   if (!project) {
     throw createError({
@@ -39,12 +42,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify page belongs to project
-  const page = await db.query.pages.findFirst({
-    where: and(
+  const pageResults = await db
+    .select()
+    .from(pages)
+    .where(and(
       eq(pages.id, pageId),
       eq(pages.projectId, projectId)
-    ),
-  })
+    ))
+    .limit(1)
+  const page = pageResults[0]
 
   if (!page) {
     throw createError({

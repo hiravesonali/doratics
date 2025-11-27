@@ -5,13 +5,21 @@
       <div class="prose prose-lg" v-html="markdownToHtml(layout.content)"></div>
     </div>
 
-    <!-- Block-based Page Renderer -->
-    <div v-else>
+    <!-- HTML Page Renderer (from PageBuilder) -->
+    <div v-else-if="layout.html" v-html="layout.html"></div>
+
+    <!-- Block-based Page Renderer (legacy/fallback) -->
+    <div v-else-if="layout.blocks">
       <BlockRenderer
         v-for="(block, index) in layout.blocks"
         :key="index"
         :block="block"
       />
+    </div>
+
+    <!-- Empty page -->
+    <div v-else class="min-h-[50vh] flex items-center justify-center">
+      <p class="text-gray-400">This page is empty. Use the page builder to add content.</p>
     </div>
   </div>
 </template>

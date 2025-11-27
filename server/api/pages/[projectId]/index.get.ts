@@ -1,4 +1,4 @@
-import { eq, and } from 'drizzle-orm'
+import { eq, and, asc } from 'drizzle-orm'
 import { pages, projects } from '../../../database/schema'
 
 export default defineEventHandler(async (event) => {
@@ -14,12 +14,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify project ownership
-  const project = await db.query.projects.findFirst({
-    where: and(
+  const projectResults = await db
+    .select()
+    .from(projects)
+    .where(and(
       eq(projects.id, projectId),
       eq(projects.userId, userId)
-    ),
-  })
+    ))
+    .limit(1)
+  const project = projectResults[0]
 
   if (!project) {
     throw createError({
@@ -28,10 +31,11 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const projectPages = await db.query.pages.findMany({
-    where: eq(pages.projectId, projectId),
-    orderBy: (pages, { asc }) => [asc(pages.slug)],
-  })
+  const projectPages = await db
+    .select()
+    .from(pages)
+    .where(eq(pages.projectId, projectId))
+    .orderBy(asc(pages.slug))
 
   return {
     success: true,

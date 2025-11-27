@@ -17,11 +17,13 @@ export default defineEventHandler(async (event) => {
   const validatedData = createProjectSchema.parse(body)
 
   // Check if subdomain is already taken
-  const existing = await db.query.projects.findFirst({
-    where: eq(projects.subdomain, validatedData.subdomain),
-  })
+  const existing = await db
+    .select()
+    .from(projects)
+    .where(eq(projects.subdomain, validatedData.subdomain))
+    .limit(1)
 
-  if (existing) {
+  if (existing.length > 0) {
     throw createError({
       statusCode: 400,
       message: 'Subdomain already taken',

@@ -26,12 +26,15 @@ export default defineEventHandler(async (event) => {
   const validatedData = updateProjectSchema.parse(body)
 
   // Verify ownership
-  const project = await db.query.projects.findFirst({
-    where: and(
+  const projectResults = await db
+    .select()
+    .from(projects)
+    .where(and(
       eq(projects.id, projectId),
       eq(projects.userId, userId)
-    ),
-  })
+    ))
+    .limit(1)
+  const project = projectResults[0]
 
   if (!project) {
     throw createError({

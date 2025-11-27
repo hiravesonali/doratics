@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm'
-import { pages, themes } from '../../database/schema'
+import { pages, themes, legalProfiles } from '../../database/schema'
 import { generateImpressum, generatePrivacyPolicy } from '../../utils/legal-templates'
 
 export default defineEventHandler(async (event) => {
@@ -18,9 +18,12 @@ export default defineEventHandler(async (event) => {
 
   // Handle legal pages specially
   if (slug === 'impressum' || slug === 'privacy') {
-    const legalProfile = await db.query.legalProfiles.findFirst({
-      where: eq(pages.projectId, projectId),
-    })
+    const legalProfileResults = await db
+      .select()
+      .from(legalProfiles)
+      .where(eq(legalProfiles.projectId, projectId))
+      .limit(1)
+    const legalProfile = legalProfileResults[0]
 
     if (!legalProfile) {
       throw createError({
@@ -52,13 +55,16 @@ export default defineEventHandler(async (event) => {
   // Fetch regular page
   const normalizedSlug = slug === '/' || !slug ? '/' : String(slug)
 
-  const page = await db.query.pages.findFirst({
-    where: and(
+  const pageResults = await db
+    .select()
+    .from(pages)
+    .where(and(
       eq(pages.projectId, projectId),
       eq(pages.slug, normalizedSlug),
       eq(pages.status, 'published')
-    ),
-  })
+    ))
+    .limit(1)
+  const page = pageResults[0]
 
   if (!page) {
     throw createError({
@@ -72,15 +78,21 @@ export default defineEventHandler(async (event) => {
   let footerTheme = null
 
   if (project.themeHeaderId) {
-    headerTheme = await db.query.themes.findFirst({
-      where: eq(themes.id, project.themeHeaderId),
-    })
+    const headerResults = await db
+      .select()
+      .from(themes)
+      .where(eq(themes.id, project.themeHeaderId))
+      .limit(1)
+    headerTheme = headerResults[0]
   }
 
   if (project.themeFooterId) {
-    footerTheme = await db.query.themes.findFirst({
-      where: eq(themes.id, project.themeFooterId),
-    })
+    const footerResults = await db
+      .select()
+      .from(themes)
+      .where(eq(themes.id, project.themeFooterId))
+      .limit(1)
+    footerTheme = footerResults[0]
   }
 
   return {

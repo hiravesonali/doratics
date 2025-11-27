@@ -106,7 +106,7 @@
             </div>
             <div class="flex gap-2">
               <NuxtLink
-                :to="`/admin/projects/${project.id}/pages/${page.id}`"
+                :to="`/admin/projects/${projectId}/pages/${page.id}`"
                 class="text-blue-600 hover:text-blue-700 px-3 py-1"
               >
                 Edit
@@ -236,6 +236,60 @@
         </form>
       </div>
     </div>
+
+    <!-- Create Page Modal -->
+    <div
+      v-if="showCreatePageModal"
+      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+      @click.self="showCreatePageModal = false"
+    >
+      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+        <h3 class="text-xl font-semibold mb-4">Create New Page</h3>
+
+        <form @submit.prevent="createPage" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium mb-2">Page Title *</label>
+            <input
+              v-model="newPage.title"
+              type="text"
+              required
+              placeholder="e.g., Home, About Us, Services"
+              class="w-full px-4 py-2 border rounded-lg"
+            />
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium mb-2">URL Slug *</label>
+            <input
+              v-model="newPage.slug"
+              type="text"
+              required
+              placeholder="e.g., home, about-us, services"
+              pattern="[a-z0-9-]+"
+              class="w-full px-4 py-2 border rounded-lg"
+            />
+            <p class="text-xs text-gray-500 mt-1">Only lowercase letters, numbers, and hyphens</p>
+          </div>
+
+          <div class="flex gap-2 justify-end">
+            <button
+              type="button"
+              @click="showCreatePageModal = false"
+              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              :disabled="creatingPage"
+              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {{ creatingPage ? 'Creating...' : 'Create Page' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -252,6 +306,11 @@ const publishing = ref(false)
 const savingSettings = ref(false)
 const savingLegal = ref(false)
 const showCreatePageModal = ref(false)
+const creatingPage = ref(false)
+const newPage = ref({
+  title: '',
+  slug: '',
+})
 
 // Fetch project data
 const { data: projectData } = await useFetch(`/api/projects/${projectId}`, {
@@ -346,6 +405,27 @@ async function updateLegalInfo() {
     alert(error.data?.message || 'Failed to save legal information')
   } finally {
     savingLegal.value = false
+  }
+}
+
+async function createPage() {
+  creatingPage.value = true
+  try {
+    await $fetch(`/api/pages/${projectId}`, {
+      method: 'POST',
+      body: newPage.value,
+      headers: {
+        Authorization: `Bearer demo-token`,
+      },
+    })
+    showCreatePageModal.value = false
+    newPage.value = { title: '', slug: '' }
+    await refreshPages()
+    alert('Page created successfully!')
+  } catch (error: any) {
+    alert(error.data?.message || 'Failed to create page')
+  } finally {
+    creatingPage.value = false
   }
 }
 </script>

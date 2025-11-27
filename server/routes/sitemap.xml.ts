@@ -12,13 +12,13 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
 
   // Get all published pages for this project
-  const publishedPages = await db.query.pages.findMany({
-    where: eq(pages.projectId, projectId),
-    columns: {
-      slug: true,
-      updatedAt: true,
-    },
-  })
+  const publishedPages = await db
+    .select({
+      slug: pages.slug,
+      updatedAt: pages.updatedAt,
+    })
+    .from(pages)
+    .where(eq(pages.projectId, projectId))
 
   // Build sitemap XML
   const baseUrl = project.customDomain

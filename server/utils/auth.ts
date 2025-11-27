@@ -1,4 +1,6 @@
 import type { H3Event } from 'h3'
+import { eq } from 'drizzle-orm'
+import { users } from '../database/schema'
 
 export async function requireAuth(event: H3Event) {
   const authHeader = getRequestHeader(event, 'authorization')
@@ -28,6 +30,24 @@ export async function requireAuth(event: H3Event) {
 
     // Placeholder user ID extraction
     const userId = 'user-placeholder' // This should come from verified JWT claims
+
+    // For local development: ensure the placeholder user exists
+    const db = useDB()
+    const existingUsers = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1)
+
+    if (existingUsers.length === 0) {
+      await db.insert(users).values({
+        id: userId,
+        email: 'dev@localhost',
+        clerkUserId: 'clerk-placeholder',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+    }
 
     event.context.userId = userId
     return userId

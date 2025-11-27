@@ -6,10 +6,10 @@ export default defineEventHandler(async (event) => {
   const host = getRequestHeader(event, 'host') || ''
   const path = event.path || '/'
 
-  // Skip for static assets and API routes
+  // Skip for static assets and most API routes (but NOT /api/public)
   if (
     path.startsWith('/_nuxt') ||
-    path.startsWith('/api') ||
+    (path.startsWith('/api') && !path.startsWith('/api/public')) ||
     path.startsWith('/__nuxt') ||
     path.startsWith('/favicon')
   ) {
@@ -30,28 +30,38 @@ export default defineEventHandler(async (event) => {
   try {
     const db = useDB()
 
+    // Remove port from host if present
+    const hostWithoutPort = host.split(':')[0]
+
     // Extract subdomain or use full domain for custom domains
     let subdomain: string | null = null
     let customDomain: string | null = null
 
-    if (host.includes('.')) {
-      const parts = host.split('.')
-      if (parts.length >= 3) {
-        // This might be a subdomain like: project.yourapp.com
+    if (hostWithoutPort.includes('.')) {
+      const parts = hostWithoutPort.split('.')
+      if (parts.length >= 3 || hostWithoutPort.includes('localhost')) {
+        // This is a subdomain like: project.yourapp.com or project.localhost
         subdomain = parts[0]
       } else {
         // This might be a custom domain like: customer-domain.com
-        customDomain = host
+        customDomain = hostWithoutPort
       }
     }
 
     // Query the database to find matching project
-    const project = await db.query.projects.findFirst({
-      where: or(
+    console.log('Domain resolver:', { host, hostWithoutPort, subdomain, customDomain })
+
+    const results = await db
+      .select()
+      .from(projects)
+      .where(or(
         subdomain ? eq(projects.subdomain, subdomain) : undefined,
         customDomain ? eq(projects.customDomain, customDomain) : undefined
-      ),
-    })
+      ))
+      .limit(1)
+    const project = results[0]
+
+    console.log('Found project:', project ? project.id : 'none')
 
     if (project) {
       event.context.isAdmin = false

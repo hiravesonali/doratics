@@ -4,7 +4,9 @@
 
     <div v-if="page" class="h-screen flex flex-col">
       <!-- Editor Header -->
-      <div class="bg-white border-b px-4 py-3 flex items-center justify-between">
+      <div
+        class="bg-white border-b px-4 py-3 flex items-center justify-between"
+      >
         <div class="flex items-center gap-4">
           <NuxtLink
             :to="`/admin/projects/${projectId}`"
@@ -24,14 +26,14 @@
             :disabled="saving"
             class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {{ saving ? 'Saving...' : 'Save' }}
+            {{ saving ? "Saving..." : "Save" }}
           </button>
           <button
             @click="publishPage"
             :disabled="publishing"
             class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
           >
-            {{ publishing ? 'Publishing...' : 'Publish' }}
+            {{ publishing ? "Publishing..." : "Publish" }}
           </button>
         </div>
       </div>
@@ -39,10 +41,7 @@
       <!-- Page Builder -->
       <div class="flex-1 overflow-hidden">
         <ClientOnly>
-          <VueWebsitePageBuilder
-            v-model="pageLayout"
-            @update:modelValue="onLayoutUpdate"
-          />
+          <PageBuilder />
         </ClientOnly>
       </div>
     </div>
@@ -50,76 +49,147 @@
 </template>
 
 <script setup lang="ts">
-import { VueWebsitePageBuilder } from '@myissue/vue-website-page-builder'
+import { PageBuilder, getPageBuilder } from "@myissue/vue-website-page-builder";
 
 definePageMeta({
   layout: false,
-})
+});
 
-const route = useRoute()
-const projectId = route.params.id as string
-const pageId = route.params.pageId as string
+const route = useRoute();
+const projectId = route.params.id as string;
+const pageId = route.params.pageId as string;
 
-const saving = ref(false)
-const publishing = ref(false)
-const pageLayout = ref({})
+const saving = ref(false);
+const publishing = ref(false);
 
 // Fetch page data
-const { data: pageData } = await useFetch(`/api/pages/${projectId}/${pageId}`, {
+interface PageResponse {
+  success: boolean;
+  data: {
+    id: string;
+    projectId: string;
+    slug: string;
+    title: string;
+    layoutJson: Record<string, unknown> | string;
+    seoTitle: string | null;
+    seoDescription: string | null;
+    status: string;
+    createdAt: string;
+    updatedAt: string;
+  };
+}
+
+const { data: pageData } = await useFetch<PageResponse>(`/api/pages/${projectId}/${pageId}`, {
   headers: {
-    Authorization: `Bearer demo-token`,
+    Authorization: "Bearer demo-token",
   },
-})
+});
 
-const page = computed(() => pageData.value?.data)
+const page = computed(() => pageData.value?.data);
 
-// Initialize layout
-if (page.value) {
-  pageLayout.value = page.value.layoutJson || {}
-}
+// Initialize Page Builder
+onMounted(async () => {
+  const pageBuilderService = getPageBuilder();
 
-function onLayoutUpdate(newLayout: any) {
-  pageLayout.value = newLayout
-}
+  // Check if there's existing HTML content to load
+  const configPageBuilder: Record<string, unknown> = {
+    updateOrCreate: {
+      formType: "update",
+      formName: "page",
+    },
+  };
+
+  // If we have saved HTML content, parse it and load it
+  if (page.value?.layoutJson) {
+    console.log("layoutJson exists:", page.value.layoutJson);
+
+    // Extract HTML from layoutJson
+    let savedHtml = '';
+    if (typeof page.value.layoutJson === 'string') {
+      savedHtml = page.value.layoutJson;
+    } else if (page.value.layoutJson && typeof page.value.layoutJson === 'object') {
+      const layoutObj = page.value.layoutJson as Record<string, unknown>;
+      savedHtml = (layoutObj.html as string) || '';
+    }
+
+    console.log("Extracted HTML:", savedHtml?.substring(0, 200));
+
+    if (savedHtml && savedHtml.trim() !== '' && savedHtml !== '{}') {
+      try {
+        const { components, pageSettings } = pageBuilderService.parsePageBuilderHTML(savedHtml);
+        console.log("Parsed components:", components?.length, "Page settings:", pageSettings);
+        configPageBuilder.pageSettings = pageSettings;
+        // Start builder with parsed components
+        const result = await pageBuilderService.startBuilder(configPageBuilder, components);
+        console.info("Page Builder initialized with existing content:", result);
+        return;
+      } catch (error) {
+        console.warn("Failed to parse existing HTML, starting fresh:", error);
+      }
+    } else {
+      console.log("No valid HTML to load, starting fresh");
+    }
+  }
+
+  // Start builder without existing content (fresh)
+  const result = await pageBuilderService.startBuilder(configPageBuilder);
+  console.info("Page Builder initialized fresh:", result);
+});
 
 async function savePage() {
-  saving.value = true
+  saving.value = true;
   try {
+    // Get the latest HTML content from PageBuilder
+    const pageBuilderService = getPageBuilder();
+    const htmlContent = pageBuilderService.getSavedPageHtml();
+
+    console.log("Saving HTML content:", htmlContent?.substring(0, 200));
+
     await $fetch(`/api/pages/${projectId}/${pageId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: {
-        layoutJson: pageLayout.value,
+        layoutJson: { html: htmlContent },
       },
       headers: {
-        Authorization: `Bearer demo-token`,
+        Authorization: "Bearer demo-token",
       },
-    })
-    alert('Page saved!')
-  } catch (error: any) {
-    alert(error.data?.message || 'Failed to save page')
+    });
+    alert("Page saved!");
+  } catch (error: unknown) {
+    console.error("Save error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to save page";
+    alert(errorMessage);
   } finally {
-    saving.value = false
+    saving.value = false;
   }
 }
 
 async function publishPage() {
-  publishing.value = true
+  publishing.value = true;
   try {
+    // Get the latest HTML content from PageBuilder
+    const pageBuilderService = getPageBuilder();
+    const htmlContent = pageBuilderService.getSavedPageHtml();
+
+    console.log("Publishing HTML content:", htmlContent?.substring(0, 200));
+
     await $fetch(`/api/pages/${projectId}/${pageId}`, {
-      method: 'PATCH',
+      method: "PATCH",
       body: {
-        layoutJson: pageLayout.value,
-        status: 'published',
+        layoutJson: { html: htmlContent },
+        status: "published",
       },
       headers: {
-        Authorization: `Bearer demo-token`,
+        Authorization: "Bearer demo-token",
       },
-    })
-    alert('Page published!')
-  } catch (error: any) {
-    alert(error.data?.message || 'Failed to publish page')
+    });
+    alert("Page published!");
+  } catch (error: unknown) {
+    console.error("Publish error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to publish page";
+    alert(errorMessage);
   } finally {
-    publishing.value = false
+    publishing.value = false;
   }
 }
 </script>

@@ -25,12 +25,15 @@ export default defineEventHandler(async (event) => {
   }
 
   // Verify project ownership
-  const project = await db.query.projects.findFirst({
-    where: and(
+  const projectResults = await db
+    .select()
+    .from(projects)
+    .where(and(
       eq(projects.id, projectId),
       eq(projects.userId, userId)
-    ),
-  })
+    ))
+    .limit(1)
+  const project = projectResults[0]
 
   if (!project) {
     throw createError({
@@ -43,9 +46,12 @@ export default defineEventHandler(async (event) => {
   const validatedData = legalProfileSchema.parse(body)
 
   // Check if profile already exists
-  const existing = await db.query.legalProfiles.findFirst({
-    where: eq(legalProfiles.projectId, projectId),
-  })
+  const existingResults = await db
+    .select()
+    .from(legalProfiles)
+    .where(eq(legalProfiles.projectId, projectId))
+    .limit(1)
+  const existing = existingResults[0]
 
   if (existing) {
     // Update existing profile

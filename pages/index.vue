@@ -1,5 +1,6 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+  <!-- Show landing page only for main domain (localhost:3000 without subdomain) -->
+  <div v-if="isMainDomain" class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
     <div class="max-w-4xl w-full">
       <div class="text-center mb-12">
         <h1 class="text-5xl font-bold text-gray-900 mb-4">
@@ -41,4 +42,57 @@
       </div>
     </div>
   </div>
+
+  <!-- For subdomains, show the project homepage -->
+  <div v-else>
+    <div v-if="page">
+      <!-- SEO Meta Tags -->
+      <Head>
+        <Title>{{ page.seoTitle || page.title }}</Title>
+        <Meta name="description" :content="page.seoDescription || ''" />
+      </Head>
+
+      <!-- Theme Header -->
+      <PublicHeader v-if="headerTheme" :theme="headerTheme" />
+
+      <!-- Page Content -->
+      <PublicPageRenderer :layout="page.layoutJson" />
+
+      <!-- Theme Footer -->
+      <PublicFooter v-if="footerTheme" :theme="footerTheme" />
+    </div>
+
+    <div v-else class="min-h-screen flex items-center justify-center bg-gray-50">
+      <div class="text-center">
+        <h1 class="text-4xl font-bold text-gray-900 mb-4">Page Not Found</h1>
+        <p class="text-gray-600">The page you're looking for doesn't exist.</p>
+      </div>
+    </div>
+  </div>
 </template>
+
+<script setup lang="ts">
+// Check if this is the main domain (without subdomain)
+const isMainDomain = computed(() => {
+  if (typeof window !== 'undefined') {
+    const host = window.location.host
+    const hostWithoutPort = host.split(':')[0] || 'localhost'
+    // Main domain is just "localhost" without any subdomain
+    return hostWithoutPort === 'localhost' || !hostWithoutPort.includes('.')
+  }
+  return true
+})
+
+// Fetch page data for subdomains
+const { data: pageData } = await useFetch('/api/public/page', {
+  query: { slug: '/' },
+  server: true,
+  lazy: false,
+  // Only fetch if not main domain
+  immediate: !isMainDomain.value,
+})
+
+const page = computed(() => (pageData.value as any)?.data)
+const headerTheme = computed(() => (pageData.value as any)?.headerTheme)
+const footerTheme = computed(() => (pageData.value as any)?.footerTheme)
+</script>
