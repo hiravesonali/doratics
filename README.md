@@ -4,6 +4,7 @@ A vertical SaaS website builder for handymen and local service businesses (elect
 
 ## Features
 
+
 ### Core Functionality
 - ✅ **Multi-tenant Architecture**: Single Nuxt app serving multiple customer websites
 - ✅ **Domain Resolution**: Subdomain + custom domain support
