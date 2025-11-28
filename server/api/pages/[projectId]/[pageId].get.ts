@@ -1,33 +1,49 @@
 import { eq, and } from 'drizzle-orm'
-import { pages, projects } from '../../../database/schema'
+import { pages, websites, users } from '../../../database/schema'
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
-  const projectId = getRouterParam(event, 'projectId')
+  const websiteId = getRouterParam(event, 'projectId')
   const pageId = getRouterParam(event, 'pageId')
   const db = useDB()
 
-  if (!projectId || !pageId) {
+  if (!websiteId || !pageId) {
     throw createError({
       statusCode: 400,
-      message: 'Project ID and Page ID required',
+      message: 'Website ID and Page ID required',
     })
   }
 
-  // Verify project ownership
-  const projectResults = await db
+  // Get user's accountId from users table
+  const userResult = await db
     .select()
-    .from(projects)
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (userResult.length === 0) {
+    throw createError({
+      statusCode: 404,
+      message: 'User not found',
+    })
+  }
+
+  const accountId = userResult[0].accountId
+
+  // Verify website ownership
+  const websiteResults = await db
+    .select()
+    .from(websites)
     .where(and(
-      eq(projects.id, projectId),
-      eq(projects.userId, userId)
+      eq(websites.id, websiteId),
+      eq(websites.accountId, accountId)
     ))
     .limit(1)
 
-  if (projectResults.length === 0) {
+  if (websiteResults.length === 0) {
     throw createError({
       statusCode: 404,
-      message: 'Project not found',
+      message: 'Website not found',
     })
   }
 
@@ -37,7 +53,7 @@ export default defineEventHandler(async (event) => {
     .from(pages)
     .where(and(
       eq(pages.id, pageId),
-      eq(pages.projectId, projectId)
+      eq(pages.websiteId, websiteId)
     ))
     .limit(1)
 

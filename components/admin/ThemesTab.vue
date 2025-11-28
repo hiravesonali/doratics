@@ -111,7 +111,7 @@ interface Theme {
 }
 
 const props = defineProps<{
-  projectId: string
+  websiteId: string
   currentHeaderId: string | null
   currentFooterId: string | null
 }>()
@@ -172,8 +172,8 @@ async function customizeHeader() {
 
       themeIdToEdit = cloneResponse.data.id
 
-      // Update project to use the cloned theme
-      await $fetch(`/api/projects/${props.projectId}/themes`, {
+      // Update website to use the cloned theme
+      await $fetch(`/api/websites/${props.websiteId}/themes`, {
         method: 'PATCH',
         body: { themeHeaderId: themeIdToEdit },
         headers: { Authorization: 'Bearer demo-token' },
@@ -184,7 +184,7 @@ async function customizeHeader() {
     }
 
     // Navigate to editor
-    await navigateTo(`/admin/projects/${props.projectId}/themes/header`)
+    await navigateTo(`/admin/websites/${props.websiteId}/themes/header`)
   } catch (error) {
     console.error('Failed to prepare header for customization:', error)
     alert('Failed to prepare header for editing')
@@ -213,8 +213,8 @@ async function customizeFooter() {
 
       themeIdToEdit = cloneResponse.data.id
 
-      // Update project to use the cloned theme
-      await $fetch(`/api/projects/${props.projectId}/themes`, {
+      // Update website to use the cloned theme
+      await $fetch(`/api/websites/${props.websiteId}/themes`, {
         method: 'PATCH',
         body: { themeFooterId: themeIdToEdit },
         headers: { Authorization: 'Bearer demo-token' },
@@ -225,7 +225,7 @@ async function customizeFooter() {
     }
 
     // Navigate to editor
-    router.push(`/admin/projects/${props.projectId}/themes/footer`)
+    await navigateTo(`/admin/websites/${props.websiteId}/themes/footer`)
   } catch (error) {
     console.error('Failed to prepare footer for customization:', error)
     alert('Failed to prepare footer for editing')
@@ -237,7 +237,7 @@ async function customizeFooter() {
 async function saveThemes() {
   saving.value = true
   try {
-    await $fetch(`/api/projects/${props.projectId}/themes`, {
+    await $fetch(`/api/websites/${props.websiteId}/themes`, {
       method: 'PATCH',
       body: {
         themeHeaderId: selectedHeaderId.value,

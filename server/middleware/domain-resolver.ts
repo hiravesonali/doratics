@@ -1,5 +1,5 @@
 import { eq, or } from 'drizzle-orm'
-import { projects } from '../database/schema'
+import { websites } from '../database/schema'
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
@@ -22,11 +22,11 @@ export default defineEventHandler(async (event) => {
 
   if (isAdminDomain) {
     event.context.isAdmin = true
-    event.context.projectId = null
+    event.context.websiteId = null
     return
   }
 
-  // For public domains, resolve the project
+  // For public domains, resolve the website
   try {
     const db = useDB()
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
     if (hostWithoutPort.includes('.')) {
       const parts = hostWithoutPort.split('.')
       if (parts.length >= 3 || hostWithoutPort.includes('localhost')) {
-        // This is a subdomain like: project.yourapp.com or project.localhost
+        // This is a subdomain like: website.yourapp.com or website.localhost
         subdomain = parts[0]
       } else {
         // This might be a custom domain like: customer-domain.com
@@ -48,33 +48,33 @@ export default defineEventHandler(async (event) => {
       }
     }
 
-    // Query the database to find matching project
+    // Query the database to find matching website
     console.log('Domain resolver:', { host, hostWithoutPort, subdomain, customDomain })
 
     const results = await db
       .select()
-      .from(projects)
+      .from(websites)
       .where(or(
-        subdomain ? eq(projects.subdomain, subdomain) : undefined,
-        customDomain ? eq(projects.customDomain, customDomain) : undefined
+        subdomain ? eq(websites.subdomain, subdomain) : undefined,
+        customDomain ? eq(websites.customDomain, customDomain) : undefined
       ))
       .limit(1)
-    const project = results[0]
+    const website = results[0]
 
-    console.log('Found project:', project ? project.id : 'none')
+    console.log('Found website:', website ? website.id : 'none')
 
-    if (project) {
+    if (website) {
       event.context.isAdmin = false
-      event.context.projectId = project.id
-      event.context.project = project
+      event.context.websiteId = website.id
+      event.context.website = website
     } else {
-      // No matching project found
+      // No matching website found
       event.context.isAdmin = false
-      event.context.projectId = null
+      event.context.websiteId = null
     }
   } catch (error) {
     console.error('Domain resolution error:', error)
     event.context.isAdmin = false
-    event.context.projectId = null
+    event.context.websiteId = null
   }
 })

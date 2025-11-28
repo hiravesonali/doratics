@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { projects, pages, themes } from '../../database/schema'
+import { websites, users, pages, themes } from '../../database/schema'
 
 // Reserved subdomains that cannot be used by users
 const RESERVED_SUBDOMAINS = [
@@ -129,7 +129,7 @@ const RESERVED_SUBDOMAINS = [
   'health',
 ]
 
-const createProjectSchema = z.object({
+const createWebsiteSchema = z.object({
   name: z.string().min(1).max(100),
   industryType: z.enum(['electrician', 'plumber', 'cleaner', 'painter', 'gardener', 'other']),
   subdomain: z.string().min(3).max(50).regex(/^[a-z0-9-]+$/),
@@ -140,7 +140,7 @@ export default defineEventHandler(async (event) => {
   const db = useDB()
 
   const body = await readBody(event)
-  const validatedData = createProjectSchema.parse(body)
+  const validatedData = createWebsiteSchema.parse(body)
 
   // Check if subdomain is reserved
   if (RESERVED_SUBDOMAINS.includes(validatedData.subdomain.toLowerCase())) {
@@ -153,8 +153,8 @@ export default defineEventHandler(async (event) => {
   // Check if subdomain is already taken
   const existing = await db
     .select()
-    .from(projects)
-    .where(eq(projects.subdomain, validatedData.subdomain))
+    .from(websites)
+    .where(eq(websites.subdomain, validatedData.subdomain))
     .limit(1)
 
   if (existing.length > 0) {
@@ -163,6 +163,22 @@ export default defineEventHandler(async (event) => {
       message: 'Subdomain already taken',
     })
   }
+
+  // Get user's accountId from users table
+  const userResult = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (userResult.length === 0) {
+    throw createError({
+      statusCode: 404,
+      message: 'User not found',
+    })
+  }
+
+  const accountId = userResult[0].accountId
 
   // Get default themes (simple header and simple footer)
   const defaultThemes = await db
@@ -177,9 +193,9 @@ export default defineEventHandler(async (event) => {
     .where(eq(themes.name, 'Simple Footer'))
     .limit(1)
 
-  const newProject = {
+  const newWebsite = {
     id: nanoid(),
-    userId,
+    accountId,
     name: validatedData.name,
     industryType: validatedData.industryType,
     subdomain: validatedData.subdomain,
@@ -191,12 +207,12 @@ export default defineEventHandler(async (event) => {
     updatedAt: new Date(),
   }
 
-  await db.insert(projects).values(newProject)
+  await db.insert(websites).values(newWebsite)
 
-  // Automatically create a homepage for the new project
+  // Automatically create a homepage for the new website
   const homePage = {
     id: nanoid(),
-    projectId: newProject.id,
+    websiteId: newWebsite.id,
     slug: '/',
     title: 'Home',
     layoutJson: { html: "" }, // Empty HTML for PageBuilder
@@ -211,6 +227,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    data: newProject,
+    data: newWebsite,
   }
 })

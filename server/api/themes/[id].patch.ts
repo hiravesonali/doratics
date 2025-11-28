@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { themes } from '../../database/schema'
+import { themes, users } from '../../database/schema'
 
 const updateThemeSchema = z.object({
   name: z.string().min(1).max(100).optional(),
@@ -9,7 +9,7 @@ const updateThemeSchema = z.object({
 })
 
 export default defineEventHandler(async (event) => {
-  await requireAuth(event)
+  const userId = await requireAuth(event)
   const db = useDB()
 
   const id = getRouterParam(event, 'id')
@@ -34,6 +34,39 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 404,
       message: 'Theme not found',
+    })
+  }
+
+  const theme = existingTheme[0]
+
+  // Get user's accountId from users table
+  const userResult = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (userResult.length === 0) {
+    throw createError({
+      statusCode: 404,
+      message: 'User not found',
+    })
+  }
+
+  const accountId = userResult[0].accountId
+
+  // Verify that the theme belongs to the user (not a global theme)
+  if (theme.accountId === null) {
+    throw createError({
+      statusCode: 403,
+      message: 'Cannot update global themes. Clone the theme first to create a custom version.',
+    })
+  }
+
+  if (theme.accountId !== accountId) {
+    throw createError({
+      statusCode: 403,
+      message: 'You do not have permission to update this theme',
     })
   }
 

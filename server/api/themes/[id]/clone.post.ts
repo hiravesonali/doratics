@@ -1,9 +1,9 @@
 import { nanoid } from 'nanoid'
 import { eq } from 'drizzle-orm'
-import { themes } from '../../../database/schema'
+import { themes, users } from '../../../database/schema'
 
 export default defineEventHandler(async (event) => {
-  await requireAuth(event)
+  const userId = await requireAuth(event)
   const db = useDB()
 
   const id = getRouterParam(event, 'id')
@@ -30,10 +30,27 @@ export default defineEventHandler(async (event) => {
 
   const theme = originalTheme[0]
 
+  // Get user's accountId from users table
+  const userResult = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  if (userResult.length === 0) {
+    throw createError({
+      statusCode: 404,
+      message: 'User not found',
+    })
+  }
+
+  const accountId = userResult[0].accountId
+
   // Create a cloned theme with a new ID
   const clonedThemeId = nanoid()
   const clonedTheme = {
     id: clonedThemeId,
+    accountId, // Set to user's accountId (makes it a custom theme)
     name: `${theme.name} (Custom)`,
     type: theme.type,
     layoutJson: theme.layoutJson,

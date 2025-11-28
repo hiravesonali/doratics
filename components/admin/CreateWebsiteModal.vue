@@ -5,7 +5,7 @@
     @click.self="closeModal"
   >
     <div class="bg-white rounded-lg max-w-md w-full p-6">
-      <h2 class="text-2xl font-bold mb-4">Create New Project</h2>
+      <h2 class="text-2xl font-bold mb-4">Create New Website</h2>
 
       <form @submit.prevent="handleSubmit" class="space-y-4">
         <!-- Error Message Display -->
@@ -14,7 +14,7 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium mb-2">Project Name</label>
+          <label class="block text-sm font-medium mb-2">Website Name</label>
           <input
             v-model="formData.name"
             type="text"
@@ -63,7 +63,7 @@
             :disabled="loading"
             class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
           >
-            {{ loading ? 'Creating...' : 'Create Project' }}
+            {{ loading ? 'Creating...' : 'Create Website' }}
           </button>
           <button
             type="button"

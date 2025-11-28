@@ -1,9 +1,18 @@
-import { eq, and, asc } from 'drizzle-orm'
-import { pages, websites, users } from '../../../database/schema'
+import { eq, and } from 'drizzle-orm'
+import { z } from 'zod'
+import { websites, users } from '../../database/schema'
+
+const updateWebsiteSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  customDomain: z.string().nullable().optional(),
+  themeHeaderId: z.string().nullable().optional(),
+  themeFooterId: z.string().nullable().optional(),
+  published: z.boolean().optional(),
+})
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
-  const websiteId = getRouterParam(event, 'projectId')
+  const websiteId = getRouterParam(event, 'id')
   const db = useDB()
 
   if (!websiteId) {
@@ -12,6 +21,9 @@ export default defineEventHandler(async (event) => {
       message: 'Website ID required',
     })
   }
+
+  const body = await readBody(event)
+  const validatedData = updateWebsiteSchema.parse(body)
 
   // Get user's accountId from users table
   const userResult = await db
@@ -29,7 +41,7 @@ export default defineEventHandler(async (event) => {
 
   const accountId = userResult[0].accountId
 
-  // Verify website ownership
+  // Verify ownership
   const websiteResults = await db
     .select()
     .from(websites)
@@ -47,14 +59,18 @@ export default defineEventHandler(async (event) => {
     })
   }
 
-  const websitePages = await db
-    .select()
-    .from(pages)
-    .where(eq(pages.websiteId, websiteId))
-    .orderBy(asc(pages.slug))
+  const updateData = {
+    ...validatedData,
+    updatedAt: new Date(),
+  }
+
+  await db
+    .update(websites)
+    .set(updateData)
+    .where(eq(websites.id, websiteId))
 
   return {
     success: true,
-    data: websitePages,
+    message: 'Website updated successfully',
   }
 })

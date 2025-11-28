@@ -1,6 +1,7 @@
 import type { H3Event } from 'h3'
 import { eq } from 'drizzle-orm'
-import { users } from '../database/schema'
+import { nanoid } from 'nanoid'
+import { users, accounts } from '../database/schema'
 
 export async function requireAuth(event: H3Event) {
   const authHeader = getRequestHeader(event, 'authorization')
@@ -40,8 +41,20 @@ export async function requireAuth(event: H3Event) {
       .limit(1)
 
     if (existingUsers.length === 0) {
+      // Create account first
+      const accountId = nanoid()
+      await db.insert(accounts).values({
+        id: accountId,
+        name: "dev@localhost's Account",
+        ownerId: userId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      // Then create user with accountId
       await db.insert(users).values({
         id: userId,
+        accountId: accountId,
         email: 'dev@localhost',
         clerkUserId: 'clerk-placeholder',
         createdAt: new Date(),

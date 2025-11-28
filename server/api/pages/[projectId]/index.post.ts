@@ -1,7 +1,7 @@
 import { eq, and } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
-import { pages, projects } from '../../../database/schema'
+import { pages, websites, users } from '../../../database/schema'
 
 const createPageSchema = z.object({
   slug: z.string()
@@ -20,43 +20,59 @@ const createPageSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
-  const projectId = getRouterParam(event, 'projectId')
+  const websiteId = getRouterParam(event, 'projectId')
   const db = useDB()
 
-  if (!projectId) {
+  if (!websiteId) {
     throw createError({
       statusCode: 400,
-      message: 'Project ID required',
+      message: 'Website ID required',
     })
   }
 
-  // Verify project ownership
-  const projectResults = await db
+  // Get user's accountId from users table
+  const userResult = await db
     .select()
-    .from(projects)
-    .where(and(
-      eq(projects.id, projectId),
-      eq(projects.userId, userId)
-    ))
+    .from(users)
+    .where(eq(users.id, userId))
     .limit(1)
-  const project = projectResults[0]
 
-  if (!project) {
+  if (userResult.length === 0) {
     throw createError({
       statusCode: 404,
-      message: 'Project not found',
+      message: 'User not found',
+    })
+  }
+
+  const accountId = userResult[0].accountId
+
+  // Verify website ownership
+  const websiteResults = await db
+    .select()
+    .from(websites)
+    .where(and(
+      eq(websites.id, websiteId),
+      eq(websites.accountId, accountId)
+    ))
+    .limit(1)
+  const website = websiteResults[0]
+
+  if (!website) {
+    throw createError({
+      statusCode: 404,
+      message: 'Website not found',
     })
   }
 
   const body = await readBody(event)
   const validatedData = createPageSchema.parse(body)
 
-  // Check if slug already exists for this project
+  // Check if slug already exists for this website
   const existingPageResults = await db
     .select()
     .from(pages)
     .where(and(
-      eq(pages.projectId, projectId),
+      eq(pages.websiteId, websiteId),
       eq(pages.slug, validatedData.slug)
     ))
     .limit(1)
@@ -76,7 +92,7 @@ export default defineEventHandler(async (event) => {
 
   const newPage = {
     id: nanoid(),
-    projectId,
+    websiteId,
     slug: validatedData.slug,
     title: validatedData.title,
     layoutJson: validatedData.layoutJson && Object.keys(validatedData.layoutJson).length > 0

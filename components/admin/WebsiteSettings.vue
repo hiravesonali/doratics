@@ -1,10 +1,10 @@
 <template>
   <div class="bg-white rounded-lg shadow p-6">
-    <h2 class="text-xl font-semibold mb-6">Project Settings</h2>
+    <h2 class="text-xl font-semibold mb-6">Website Settings</h2>
 
     <form @submit.prevent="handleSubmit" class="space-y-6">
       <div>
-        <label class="block text-sm font-medium mb-2">Project Name</label>
+        <label class="block text-sm font-medium mb-2">Website Name</label>
         <input
           v-model="formData.name"
           type="text"

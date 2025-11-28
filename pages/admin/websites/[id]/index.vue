@@ -2,13 +2,13 @@
   <div class="min-h-screen bg-gray-50">
     <AdminNav />
 
-    <div v-if="project" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <!-- Project Header -->
-      <AdminProjectHeader
-        :project="project"
+    <div v-if="website" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <!-- Website Header -->
+      <AdminWebsiteHeader
+        :website="website"
         :base-domain="config.public.baseDomain"
         :publishing="publishing"
-        @publish="publishProject"
+        @publish="publishWebsite"
       />
 
       <!-- Tabs -->
@@ -65,12 +65,12 @@
       <AdminPagesList
         v-if="activeTab === 'pages'"
         :pages="pages"
-        :project-id="projectId"
+        :website-id="websiteId"
         @create-page="showCreatePageModal = true"
       />
 
       <!-- Settings Tab -->
-      <AdminProjectSettings
+      <AdminWebsiteSettings
         v-if="activeTab === 'settings'"
         :settings="settings"
         :base-domain="config.public.baseDomain"
@@ -81,9 +81,9 @@
       <!-- Themes Tab -->
       <AdminThemesTab
         v-if="activeTab === 'themes'"
-        :project-id="projectId"
-        :current-header-id="project.themeHeaderId"
-        :current-footer-id="project.themeFooterId"
+        :website-id="websiteId"
+        :current-header-id="website.themeHeaderId"
+        :current-footer-id="website.themeFooterId"
         @saved="handleThemesSaved"
       />
 
@@ -113,7 +113,7 @@ definePageMeta({
 
 const config = useRuntimeConfig()
 const route = useRoute()
-const projectId = route.params.id as string
+const websiteId = route.params.id as string
 
 const activeTab = ref('pages')
 const publishing = ref(false)
@@ -123,18 +123,18 @@ const showCreatePageModal = ref(false)
 const creatingPage = ref(false)
 const pageCreateError = ref('')
 
-// Fetch project data
-const { data: projectData } = await useFetch(`/api/projects/${projectId}`, {
+// Fetch website data
+const { data: websiteData } = await useFetch(`/api/websites/${websiteId}`, {
   headers: {
     Authorization: 'Bearer demo-token',
   },
 })
 
-const project = computed(() => projectData.value?.data)
+const website = computed(() => websiteData.value?.data)
 
 // Fetch pages
 const { data: pagesData, refresh: refreshPages } = await useFetch(
-  `/api/pages/${projectId}`,
+  `/api/pages/${websiteId}`,
   {
     headers: {
       Authorization: 'Bearer demo-token',
@@ -145,15 +145,15 @@ const { data: pagesData, refresh: refreshPages } = await useFetch(
 const pages = computed(() => pagesData.value?.data || [])
 
 // Fetch legal info
-const { data: legalData } = await useFetch(`/api/legal/${projectId}`, {
+const { data: legalData } = await useFetch(`/api/legal`, {
   headers: {
     Authorization: 'Bearer demo-token',
   },
 })
 
 const settings = ref({
-  name: project.value?.name || '',
-  customDomain: project.value?.customDomain || '',
+  name: website.value?.name || '',
+  customDomain: website.value?.customDomain || '',
 })
 
 const legalInfo = ref({
@@ -165,20 +165,20 @@ const legalInfo = ref({
   vatId: legalData.value?.data?.vatId || '',
 })
 
-async function publishProject() {
+async function publishWebsite() {
   publishing.value = true
   try {
-    await $fetch(`/api/projects/${projectId}`, {
+    await $fetch(`/api/websites/${websiteId}`, {
       method: 'PATCH',
       body: { published: true },
       headers: {
         Authorization: 'Bearer demo-token',
       },
     })
-    alert('Project published successfully!')
+    alert('Website published successfully!')
   } catch (error) {
     const err = error as { data?: { message?: string } }
-    alert(err.data?.message || 'Failed to publish project')
+    alert(err.data?.message || 'Failed to publish website')
   } finally {
     publishing.value = false
   }
@@ -187,7 +187,7 @@ async function publishProject() {
 async function updateSettings(formData: { name: string; customDomain: string | null }) {
   savingSettings.value = true
   try {
-    await $fetch(`/api/projects/${projectId}`, {
+    await $fetch(`/api/websites/${websiteId}`, {
       method: 'PATCH',
       body: formData,
       headers: {
@@ -213,7 +213,7 @@ async function updateLegalInfo(formData: {
 }) {
   savingLegal.value = true
   try {
-    await $fetch(`/api/legal/${projectId}`, {
+    await $fetch('/api/legal', {
       method: 'POST',
       body: formData,
       headers: {
@@ -233,7 +233,7 @@ async function createPage(formData: { title: string; slug: string }) {
   creatingPage.value = true
   pageCreateError.value = ''
   try {
-    await $fetch(`/api/pages/${projectId}`, {
+    await $fetch(`/api/pages/${websiteId}`, {
       method: 'POST',
       body: formData,
       headers: {
@@ -258,7 +258,7 @@ async function createPage(formData: { title: string; slug: string }) {
 }
 
 function handleThemesSaved() {
-  // Refresh project data to get updated theme IDs
+  // Refresh website data to get updated theme IDs
   // The ThemesTab component handles its own state
 }
 </script>

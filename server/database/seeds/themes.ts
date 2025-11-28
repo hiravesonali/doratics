@@ -4,21 +4,12 @@ import { nanoid } from 'nanoid'
 export const defaultHeaders = [
   {
     id: 'simple-header-1',
+    accountId: null, // Global template
     name: 'Simple Header',
     type: 'header',
     layoutJson: {
       html: `
-<header style="background: #ffffff; border-bottom: 1px solid #e5e7eb; padding: 1rem 0;">
-  <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-size: 1.5rem; font-weight: bold; color: #1f2937;">Your Logo</div>
-    <nav style="display: flex; gap: 2rem;">
-      <a href="/" style="color: #4b5563; text-decoration: none;">Home</a>
-      <a href="/about" style="color: #4b5563; text-decoration: none;">About</a>
-      <a href="/services" style="color: #4b5563; text-decoration: none;">Services</a>
-      <a href="/contact" style="color: #4b5563; text-decoration: none;">Contact</a>
-    </nav>
-  </div>
-</header>
+      <div class="pbx-mx-auto pbx-max-w-7xl"><div class="pbx-mx-auto pbx-text-center"> <div class="pbx-break-words pbx-text-6xl lg:pbx-text-8xl pbx-font-medium"> <h2>Start customizing by editing this default text directly in the editor.</h2> </div> <div class="pbx-pt-12 pbx-pb-4"> <p>Start customizing by editing this default text directly in the editor. Start customizing by editing this default text directly in the editor.</p> </div> <div class="pbx-font-semibold pbx-py-4"><p><a target="_blank" rel="noopener noreferrer nofollow" href="https://www.google.com">Layouts and Visuals</a></p></div> </div> </div>
       `.trim()
     },
     previewImageUrl: null,
@@ -27,20 +18,11 @@ export const defaultHeaders = [
   },
   {
     id: 'hero-header-1',
+    accountId: null, // Global template
     name: 'Header with CTA',
     type: 'header',
     layoutJson: {
-      html: `
-<header style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1rem 0;">
-  <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
-    <div style="font-size: 1.5rem; font-weight: bold;">Your Business</div>
-    <nav style="display: flex; gap: 2rem; align-items: center;">
-      <a href="/" style="color: white; text-decoration: none;">Home</a>
-      <a href="/services" style="color: white; text-decoration: none;">Services</a>
-      <a href="/contact" style="background: white; color: #667eea; padding: 0.5rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600;">Get Quote</a>
-    </nav>
-  </div>
-</header>
+      html: `<div class="pbx-mx-auto pbx-max-w-7xl"><div class="pbx-mx-auto pbx-text-center"> <div class="pbx-break-words pbx-text-6xl lg:pbx-text-8xl pbx-font-medium"> <h2>Start customizing by editing this default text directly in the editor.</h2> </div> <div class="pbx-pt-12 pbx-pb-4"> <p>Start customizing by editing this default text directly in the editor. Start customizing by editing this default text directly in the editor.</p> </div> <div class="pbx-font-semibold pbx-py-4"><p><a target="_blank" rel="noopener noreferrer nofollow" href="https://www.google.com">Layouts and Visuals</a></p></div> </div> </div>
       `.trim()
     },
     previewImageUrl: null,
@@ -53,6 +35,7 @@ export const defaultHeaders = [
 export const defaultFooters = [
   {
     id: 'simple-footer-1',
+    accountId: null, // Global template
     name: 'Simple Footer',
     type: 'footer',
     layoutJson: {
@@ -91,6 +74,7 @@ export const defaultFooters = [
   },
   {
     id: 'minimal-footer-1',
+    accountId: null, // Global template
     name: 'Minimal Footer',
     type: 'footer',
     layoutJson: {

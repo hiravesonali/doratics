@@ -1,7 +1,7 @@
-import { eq, and } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
-import { legalProfiles, projects } from '../../../database/schema'
+import { legalProfiles, users } from '../../../database/schema'
 
 const legalProfileSchema = z.object({
   companyName: z.string().min(1),
@@ -14,42 +14,32 @@ const legalProfileSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
-  const projectId = getRouterParam(event, 'projectId')
   const db = useDB()
 
-  if (!projectId) {
-    throw createError({
-      statusCode: 400,
-      message: 'Project ID required',
-    })
-  }
-
-  // Verify project ownership
-  const projectResults = await db
+  // Get user's accountId from users table
+  const userResult = await db
     .select()
-    .from(projects)
-    .where(and(
-      eq(projects.id, projectId),
-      eq(projects.userId, userId)
-    ))
+    .from(users)
+    .where(eq(users.id, userId))
     .limit(1)
-  const project = projectResults[0]
 
-  if (!project) {
+  if (userResult.length === 0) {
     throw createError({
       statusCode: 404,
-      message: 'Project not found',
+      message: 'User not found',
     })
   }
+
+  const accountId = userResult[0].accountId
 
   const body = await readBody(event)
   const validatedData = legalProfileSchema.parse(body)
 
-  // Check if profile already exists
+  // Check if profile already exists for this account
   const existingResults = await db
     .select()
     .from(legalProfiles)
-    .where(eq(legalProfiles.projectId, projectId))
+    .where(eq(legalProfiles.accountId, accountId))
     .limit(1)
   const existing = existingResults[0]
 
@@ -71,7 +61,7 @@ export default defineEventHandler(async (event) => {
     // Create new profile
     const newProfile = {
       id: nanoid(),
-      projectId,
+      accountId,
       ...validatedData,
       createdAt: new Date(),
       updatedAt: new Date(),

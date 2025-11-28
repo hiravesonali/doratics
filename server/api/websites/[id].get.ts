@@ -1,9 +1,9 @@
-import { eq, and, asc } from 'drizzle-orm'
-import { pages, websites, users } from '../../../database/schema'
+import { eq, and } from 'drizzle-orm'
+import { websites, users } from '../../database/schema'
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
-  const websiteId = getRouterParam(event, 'projectId')
+  const websiteId = getRouterParam(event, 'id')
   const db = useDB()
 
   if (!websiteId) {
@@ -29,8 +29,7 @@ export default defineEventHandler(async (event) => {
 
   const accountId = userResult[0].accountId
 
-  // Verify website ownership
-  const websiteResults = await db
+  const result = await db
     .select()
     .from(websites)
     .where(and(
@@ -38,23 +37,16 @@ export default defineEventHandler(async (event) => {
       eq(websites.accountId, accountId)
     ))
     .limit(1)
-  const website = websiteResults[0]
 
-  if (!website) {
+  if (result.length === 0) {
     throw createError({
       statusCode: 404,
       message: 'Website not found',
     })
   }
 
-  const websitePages = await db
-    .select()
-    .from(pages)
-    .where(eq(pages.websiteId, websiteId))
-    .orderBy(asc(pages.slug))
-
   return {
     success: true,
-    data: websitePages,
+    data: result[0],
   }
 })

@@ -1,9 +1,54 @@
 {
   "version": "6",
   "dialect": "sqlite",
-  "id": "8895c97e-87f8-42ca-8b92-95a1ec169342",
+  "id": "03c187db-3702-4b7f-bfcf-dffc469f1b9a",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "tables": {
+    "accounts": {
+      "name": "accounts",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "owner_id": {
+          "name": "owner_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "autoincrement": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "checkConstraints": {}
+    },
     "users": {
       "name": "users",
       "columns": {
@@ -11,6 +56,13 @@
           "name": "id",
           "type": "text",
           "primaryKey": true,
+          "notNull": true,
+          "autoincrement": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
           "notNull": true,
           "autoincrement": false
         },
@@ -59,13 +111,27 @@
           "isUnique": true
         }
       },
-      "foreignKeys": {},
+      "foreignKeys": {
+        "users_account_id_accounts_id_fk": {
+          "name": "users_account_id_accounts_id_fk",
+          "tableFrom": "users",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
     },
-    "projects": {
-      "name": "projects",
+    "websites": {
+      "name": "websites",
       "columns": {
         "id": {
           "name": "id",
@@ -74,8 +140,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "user_id": {
-          "name": "user_id",
+        "account_id": {
+          "name": "account_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -104,6 +170,13 @@
         },
         "custom_domain": {
           "name": "custom_domain",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
+          "autoincrement": false
+        },
+        "legal_profile_id": {
+          "name": "legal_profile_id",
           "type": "text",
           "primaryKey": false,
           "notNull": false,
@@ -147,15 +220,15 @@
         }
       },
       "indexes": {
-        "projects_subdomain_unique": {
-          "name": "projects_subdomain_unique",
+        "websites_subdomain_unique": {
+          "name": "websites_subdomain_unique",
           "columns": [
             "subdomain"
           ],
           "isUnique": true
         },
-        "projects_custom_domain_unique": {
-          "name": "projects_custom_domain_unique",
+        "websites_custom_domain_unique": {
+          "name": "websites_custom_domain_unique",
           "columns": [
             "custom_domain"
           ],
@@ -163,17 +236,30 @@
         }
       },
       "foreignKeys": {
-        "projects_user_id_users_id_fk": {
-          "name": "projects_user_id_users_id_fk",
-          "tableFrom": "projects",
-          "tableTo": "users",
+        "websites_account_id_accounts_id_fk": {
+          "name": "websites_account_id_accounts_id_fk",
+          "tableFrom": "websites",
+          "tableTo": "accounts",
           "columnsFrom": [
-            "user_id"
+            "account_id"
           ],
           "columnsTo": [
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "websites_legal_profile_id_legal_profiles_id_fk": {
+          "name": "websites_legal_profile_id_legal_profiles_id_fk",
+          "tableFrom": "websites",
+          "tableTo": "legal_profiles",
+          "columnsFrom": [
+            "legal_profile_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         }
       },
@@ -191,8 +277,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "project_id": {
-          "name": "project_id",
+        "website_id": {
+          "name": "website_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -258,12 +344,12 @@
       },
       "indexes": {},
       "foreignKeys": {
-        "pages_project_id_projects_id_fk": {
-          "name": "pages_project_id_projects_id_fk",
+        "pages_website_id_websites_id_fk": {
+          "name": "pages_website_id_websites_id_fk",
           "tableFrom": "pages",
-          "tableTo": "projects",
+          "tableTo": "websites",
           "columnsFrom": [
-            "project_id"
+            "website_id"
           ],
           "columnsTo": [
             "id"
@@ -284,6 +370,13 @@
           "type": "text",
           "primaryKey": true,
           "notNull": true,
+          "autoincrement": false
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false,
           "autoincrement": false
         },
         "name": {
@@ -330,7 +423,21 @@
         }
       },
       "indexes": {},
-      "foreignKeys": {},
+      "foreignKeys": {
+        "themes_account_id_accounts_id_fk": {
+          "name": "themes_account_id_accounts_id_fk",
+          "tableFrom": "themes",
+          "tableTo": "accounts",
+          "columnsFrom": [
+            "account_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "checkConstraints": {}
@@ -345,8 +452,8 @@
           "notNull": true,
           "autoincrement": false
         },
-        "project_id": {
-          "name": "project_id",
+        "account_id": {
+          "name": "account_id",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
@@ -409,22 +516,14 @@
           "autoincrement": false
         }
       },
-      "indexes": {
-        "legal_profiles_project_id_unique": {
-          "name": "legal_profiles_project_id_unique",
-          "columns": [
-            "project_id"
-          ],
-          "isUnique": true
-        }
-      },
+      "indexes": {},
       "foreignKeys": {
-        "legal_profiles_project_id_projects_id_fk": {
-          "name": "legal_profiles_project_id_projects_id_fk",
+        "legal_profiles_account_id_accounts_id_fk": {
+          "name": "legal_profiles_account_id_accounts_id_fk",
           "tableFrom": "legal_profiles",
-          "tableTo": "projects",
+          "tableTo": "accounts",
           "columnsFrom": [
-            "project_id"
+            "account_id"
           ],
           "columnsTo": [
             "id"

@@ -9,7 +9,7 @@
       >
         <div class="flex items-center gap-4">
           <NuxtLink
-            :to="`/admin/projects/${projectId}`"
+            :to="`/admin/websites/${websiteId}`"
             class="text-blue-600 hover:text-blue-700"
           >
             ← Back
@@ -56,7 +56,7 @@ definePageMeta({
 });
 
 const route = useRoute();
-const projectId = route.params.id as string;
+const websiteId = route.params.id as string;
 const pageId = route.params.pageId as string;
 
 const saving = ref(false);
@@ -67,7 +67,7 @@ interface PageResponse {
   success: boolean;
   data: {
     id: string;
-    projectId: string;
+    websiteId: string;
     slug: string;
     title: string;
     layoutJson: Record<string, unknown> | string;
@@ -79,7 +79,7 @@ interface PageResponse {
   };
 }
 
-const { data: pageData } = await useFetch<PageResponse>(`/api/pages/${projectId}/${pageId}`, {
+const { data: pageData } = await useFetch<PageResponse>(`/api/pages/${websiteId}/${pageId}`, {
   headers: {
     Authorization: "Bearer demo-token",
   },
@@ -96,7 +96,7 @@ onMounted(async () => {
   const configPageBuilder: Record<string, unknown> = {
     updateOrCreate: {
       formType: "update",
-      formName: `page-${projectId}-${pageId}`, // Unique per page
+      formName: `page-${websiteId}-${pageId}`, // Unique per page
     },
   };
 
@@ -146,7 +146,7 @@ async function savePage() {
 
     console.log("Saving HTML content:", htmlContent?.substring(0, 200));
 
-    await $fetch(`/api/pages/${projectId}/${pageId}`, {
+    await $fetch(`/api/pages/${websiteId}/${pageId}`, {
       method: "PATCH",
       body: {
         layoutJson: { html: htmlContent },
@@ -158,7 +158,7 @@ async function savePage() {
 
     // Clear localStorage after successful save to prevent stale data
     // Database is now the single source of truth
-    const storageKey = `page-builder-update-resource-page-${projectId}-${pageId}-default-post`;
+    const storageKey = `page-builder-update-resource-page-${websiteId}-${pageId}-default-post`;
     localStorage.removeItem(storageKey);
 
     alert("Page saved!");
@@ -180,7 +180,7 @@ async function publishPage() {
 
     console.log("Publishing HTML content:", htmlContent?.substring(0, 200));
 
-    await $fetch(`/api/pages/${projectId}/${pageId}`, {
+    await $fetch(`/api/pages/${websiteId}/${pageId}`, {
       method: "PATCH",
       body: {
         layoutJson: { html: htmlContent },
@@ -193,7 +193,7 @@ async function publishPage() {
 
     // Clear localStorage after successful publish to prevent stale data
     // Database is now the single source of truth
-    const storageKey = `page-builder-update-resource-page-${projectId}-${pageId}-default-post`;
+    const storageKey = `page-builder-update-resource-page-${websiteId}-${pageId}-default-post`;
     localStorage.removeItem(storageKey);
 
     alert("Page published!");

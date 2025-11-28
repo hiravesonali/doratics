@@ -7,10 +7,10 @@
       <div class="bg-white border-b px-4 py-3 flex items-center justify-between">
         <div class="flex items-center gap-4">
           <NuxtLink
-            :to="`/admin/projects/${projectId}`"
+            :to="`/admin/websites/${websiteId}`"
             class="text-blue-600 hover:text-blue-700"
           >
-            ← Back to Project
+            ← Back to Website
           </NuxtLink>
           <div>
             <h1 class="text-lg font-semibold">Edit Header</h1>
@@ -47,7 +47,7 @@ definePageMeta({
 });
 
 const route = useRoute();
-const projectId = route.params.id as string;
+const websiteId = route.params.id as string;
 const saving = ref(false);
 
 // Initialize Page Builder
@@ -57,18 +57,18 @@ onMounted(async () => {
   const configPageBuilder: Record<string, unknown> = {
     updateOrCreate: {
       formType: "update",
-      formName: `header-${projectId}`,
+      formName: `header-${websiteId}`,
     },
   };
 
-  // Fetch current project to get theme header ID
-  const projectResponse = await $fetch(`/api/projects/${projectId}`, {
+  // Fetch current website to get theme header ID
+  const websiteResponse = await $fetch(`/api/websites/${websiteId}`, {
     headers: { Authorization: "Bearer demo-token" },
   }) as { data: { themeHeaderId: string | null } };
 
-  if (projectResponse.data.themeHeaderId) {
+  if (websiteResponse.data.themeHeaderId) {
     // Fetch the theme HTML
-    const themeResponse = await $fetch(`/api/themes/${projectResponse.data.themeHeaderId}`, {
+    const themeResponse = await $fetch(`/api/themes/${websiteResponse.data.themeHeaderId}`, {
       headers: { Authorization: "Bearer demo-token" },
     }) as { data: { layoutJson: { html?: string } } };
 
@@ -96,12 +96,12 @@ async function saveTheme() {
     const pageBuilderService = getPageBuilder();
     const htmlContent = pageBuilderService.getSavedPageHtml();
 
-    // Get current project
-    const projectResponse = await $fetch(`/api/projects/${projectId}`, {
+    // Get current website
+    const websiteResponse = await $fetch(`/api/websites/${websiteId}`, {
       headers: { Authorization: "Bearer demo-token" },
     }) as { data: { themeHeaderId: string | null } };
 
-    const themeId = projectResponse.data.themeHeaderId;
+    const themeId = websiteResponse.data.themeHeaderId;
 
     if (themeId) {
       // Update existing theme
@@ -113,7 +113,7 @@ async function saveTheme() {
     }
 
     // Clear localStorage after save
-    const storageKey = `page-builder-update-resource-header-${projectId}-default-post`;
+    const storageKey = `page-builder-update-resource-header-${websiteId}-default-post`;
     localStorage.removeItem(storageKey);
 
     alert("Header saved successfully!");

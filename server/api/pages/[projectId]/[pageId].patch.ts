@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm'
 import { z } from 'zod'
-import { pages, projects } from '../../../database/schema'
+import { pages, websites, users } from '../../../database/schema'
 
 const updatePageSchema = z.object({
   title: z.string().min(1).max(200).optional(),
@@ -12,42 +12,58 @@ const updatePageSchema = z.object({
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event)
-  const projectId = getRouterParam(event, 'projectId')
+  const websiteId = getRouterParam(event, 'projectId')
   const pageId = getRouterParam(event, 'pageId')
   const db = useDB()
 
-  if (!projectId || !pageId) {
+  if (!websiteId || !pageId) {
     throw createError({
       statusCode: 400,
-      message: 'Project ID and Page ID required',
+      message: 'Website ID and Page ID required',
     })
   }
 
-  // Verify project ownership
-  const projectResults = await db
+  // Get user's accountId from users table
+  const userResult = await db
     .select()
-    .from(projects)
-    .where(and(
-      eq(projects.id, projectId),
-      eq(projects.userId, userId)
-    ))
+    .from(users)
+    .where(eq(users.id, userId))
     .limit(1)
-  const project = projectResults[0]
 
-  if (!project) {
+  if (userResult.length === 0) {
     throw createError({
       statusCode: 404,
-      message: 'Project not found',
+      message: 'User not found',
     })
   }
 
-  // Verify page belongs to project
+  const accountId = userResult[0].accountId
+
+  // Verify website ownership
+  const websiteResults = await db
+    .select()
+    .from(websites)
+    .where(and(
+      eq(websites.id, websiteId),
+      eq(websites.accountId, accountId)
+    ))
+    .limit(1)
+  const website = websiteResults[0]
+
+  if (!website) {
+    throw createError({
+      statusCode: 404,
+      message: 'Website not found',
+    })
+  }
+
+  // Verify page belongs to website
   const pageResults = await db
     .select()
     .from(pages)
     .where(and(
       eq(pages.id, pageId),
-      eq(pages.projectId, projectId)
+      eq(pages.websiteId, websiteId)
     ))
     .limit(1)
   const page = pageResults[0]

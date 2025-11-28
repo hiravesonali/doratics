@@ -1,16 +1,16 @@
 import { eq, and } from 'drizzle-orm'
-import { pages, themes, legalProfiles } from '../../database/schema'
+import { pages, themes, legalProfiles, websites } from '../../database/schema'
 import { generateImpressum, generatePrivacyPolicy } from '../../utils/legal-templates'
 
 export default defineEventHandler(async (event) => {
   const { slug } = getQuery(event)
-  const projectId = event.context.projectId
-  const project = event.context.project
+  const websiteId = event.context.websiteId
+  const website = event.context.website
 
-  if (!projectId || !project) {
+  if (!websiteId || !website) {
     throw createError({
       statusCode: 404,
-      message: 'Project not found',
+      message: 'Website not found',
     })
   }
 
@@ -18,10 +18,25 @@ export default defineEventHandler(async (event) => {
 
   // Handle legal pages specially
   if (slug === 'impressum' || slug === 'privacy') {
+    // Legal profiles are now account-based, need to get accountId from website
+    const websiteResults = await db
+      .select()
+      .from(websites)
+      .where(eq(websites.id, websiteId))
+      .limit(1)
+    const websiteData = websiteResults[0]
+
+    if (!websiteData) {
+      throw createError({
+        statusCode: 404,
+        message: 'Website not found',
+      })
+    }
+
     const legalProfileResults = await db
       .select()
       .from(legalProfiles)
-      .where(eq(legalProfiles.projectId, projectId))
+      .where(eq(legalProfiles.accountId, websiteData.accountId))
       .limit(1)
     const legalProfile = legalProfileResults[0]
 
@@ -59,7 +74,7 @@ export default defineEventHandler(async (event) => {
     .select()
     .from(pages)
     .where(and(
-      eq(pages.projectId, projectId),
+      eq(pages.websiteId, websiteId),
       eq(pages.slug, normalizedSlug),
       eq(pages.status, 'published')
     ))
@@ -77,20 +92,20 @@ export default defineEventHandler(async (event) => {
   let headerTheme = null
   let footerTheme = null
 
-  if (project.themeHeaderId) {
+  if (website.themeHeaderId) {
     const headerResults = await db
       .select()
       .from(themes)
-      .where(eq(themes.id, project.themeHeaderId))
+      .where(eq(themes.id, website.themeHeaderId))
       .limit(1)
     headerTheme = headerResults[0]
   }
 
-  if (project.themeFooterId) {
+  if (website.themeFooterId) {
     const footerResults = await db
       .select()
       .from(themes)
-      .where(eq(themes.id, project.themeFooterId))
+      .where(eq(themes.id, website.themeFooterId))
       .limit(1)
     footerTheme = footerResults[0]
   }

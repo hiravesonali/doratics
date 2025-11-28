@@ -32,7 +32,7 @@
         </div>
         <div class="flex gap-2">
           <NuxtLink
-            :to="`/admin/projects/${projectId}/pages/${page.id}`"
+            :to="`/admin/websites/${websiteId}/pages/${page.id}`"
             class="text-blue-600 hover:text-blue-700 px-3 py-1"
           >
             Edit
@@ -57,7 +57,7 @@ interface Page {
 
 defineProps<{
   pages: Page[]
-  projectId: string
+  websiteId: string
 }>()
 
 defineEmits<{
