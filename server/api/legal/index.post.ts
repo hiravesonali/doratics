@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm'
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
-import { legalProfiles, users } from '../../../database/schema'
+import { legalProfiles, users } from '../../database/schema'
 
 const legalProfileSchema = z.object({
   companyName: z.string().min(1),

@@ -48,7 +48,7 @@
             Themes
           </button>
           <button
-            @click="activeTab === 'legal'"
+            @click="activeTab = 'legal'"
             :class="[
               activeTab === 'legal'
                 ? 'border-blue-500 text-blue-600'
