@@ -20,36 +20,12 @@
 
       <!-- Projects Grid -->
       <div v-if="projects && projects.length > 0" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div
+        <AdminProjectCard
           v-for="project in projects"
           :key="project.id"
-          class="bg-white rounded-lg shadow-md hover:shadow-lg transition p-6"
-        >
-          <h3 class="text-xl font-semibold mb-2">{{ project.name }}</h3>
-          <p class="text-sm text-gray-500 mb-4">{{ project.industryType }}</p>
-
-          <div class="mb-4">
-            <span class="text-sm text-gray-600">
-              {{ project.subdomain }}.{{ config.public.baseDomain }}
-            </span>
-          </div>
-
-          <div class="flex gap-2">
-            <NuxtLink
-              :to="`/admin/projects/${project.id}`"
-              class="flex-1 text-center bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition"
-            >
-              Edit
-            </NuxtLink>
-            <a
-              :href="`http://${project.subdomain}.${config.public.baseDomain}`"
-              target="_blank"
-              class="flex-1 text-center border border-gray-300 px-4 py-2 rounded hover:bg-gray-50 transition"
-            >
-              View
-            </a>
-          </div>
-        </div>
+          :project="project"
+          :base-domain="config.public.baseDomain"
+        />
       </div>
 
       <div v-else-if="!loading" class="text-center py-12 bg-white rounded-lg shadow">
@@ -62,84 +38,14 @@
         </button>
       </div>
 
-      <!-- Create Project Modal (simplified for MVP) -->
-      <div
-        v-if="showCreateModal"
-        class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
-        @click.self="showCreateModal = false"
-      >
-        <div class="bg-white rounded-lg max-w-md w-full p-6">
-          <h2 class="text-2xl font-bold mb-4">Create New Project</h2>
-
-          <form @submit.prevent="createProject" class="space-y-4">
-            <!-- Error Message Display -->
-            <div v-if="createError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-              <p class="font-semibold">{{ createError }}</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-2">Project Name</label>
-              <input
-                v-model="newProject.name"
-                type="text"
-                required
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="My Handyman Business"
-              />
-              <p class="text-xs text-gray-500 mt-1">1-100 characters</p>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-2">Industry Type</label>
-              <select
-                v-model="newProject.industryType"
-                required
-                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="electrician">Electrician</option>
-                <option value="plumber">Plumber</option>
-                <option value="cleaner">Cleaner</option>
-                <option value="painter">Painter</option>
-                <option value="gardener">Gardener</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-2">Subdomain</label>
-              <div class="flex items-center gap-2">
-                <input
-                  v-model="newProject.subdomain"
-                  type="text"
-                  required
-                  pattern="[a-z0-9-]+"
-                  class="flex-1 px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  placeholder="my-business"
-                />
-                <span class="text-gray-500">.{{ config.public.baseDomain }}</span>
-              </div>
-              <p class="text-xs text-gray-500 mt-1">3-50 characters, lowercase letters, numbers, and hyphens only</p>
-            </div>
-
-            <div class="flex gap-2 pt-4">
-              <button
-                type="submit"
-                :disabled="creating"
-                class="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-              >
-                {{ creating ? 'Creating...' : 'Create Project' }}
-              </button>
-              <button
-                type="button"
-                @click="showCreateModal = false"
-                class="flex-1 border border-gray-300 px-4 py-2 rounded-lg hover:bg-gray-50"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <!-- Create Project Modal -->
+      <AdminCreateProjectModal
+        v-model="showCreateModal"
+        :base-domain="config.public.baseDomain"
+        :loading="creating"
+        :error="createError"
+        @submit="createProject"
+      />
     </div>
   </div>
 </template>
@@ -155,12 +61,6 @@ const loading = ref(false)
 const creating = ref(false)
 const createError = ref('')
 
-const newProject = ref({
-  name: '',
-  industryType: 'other',
-  subdomain: '',
-})
-
 // Fetch projects
 const { data: projectsData, refresh } = await useFetch('/api/projects', {
   headers: {
@@ -170,25 +70,19 @@ const { data: projectsData, refresh } = await useFetch('/api/projects', {
 
 const projects = computed(() => projectsData.value?.data || [])
 
-async function createProject() {
+async function createProject(formData: { name: string; industryType: string; subdomain: string }) {
   creating.value = true
   createError.value = ''
   try {
     await $fetch('/api/projects', {
       method: 'POST',
-      body: newProject.value,
+      body: formData,
       headers: {
         Authorization: `Bearer demo-token`, // Replace with actual Clerk token
       },
     })
 
     showCreateModal.value = false
-    newProject.value = {
-      name: '',
-      industryType: 'other',
-      subdomain: '',
-    }
-
     await refresh()
   } catch (error: any) {
     // Display validation errors properly

@@ -92,10 +92,11 @@ onMounted(async () => {
   const pageBuilderService = getPageBuilder();
 
   // Check if there's existing HTML content to load
+  // Use unique formName per page to prevent localStorage conflicts
   const configPageBuilder: Record<string, unknown> = {
     updateOrCreate: {
       formType: "update",
-      formName: "page",
+      formName: `page-${projectId}-${pageId}`, // Unique per page
     },
   };
 
@@ -154,6 +155,12 @@ async function savePage() {
         Authorization: "Bearer demo-token",
       },
     });
+
+    // Clear localStorage after successful save to prevent stale data
+    // Database is now the single source of truth
+    const storageKey = `page-builder-update-resource-page-${projectId}-${pageId}-default-post`;
+    localStorage.removeItem(storageKey);
+
     alert("Page saved!");
   } catch (error: unknown) {
     console.error("Save error:", error);
@@ -183,6 +190,12 @@ async function publishPage() {
         Authorization: "Bearer demo-token",
       },
     });
+
+    // Clear localStorage after successful publish to prevent stale data
+    // Database is now the single source of truth
+    const storageKey = `page-builder-update-resource-page-${projectId}-${pageId}-default-post`;
+    localStorage.removeItem(storageKey);
+
     alert("Page published!");
   } catch (error: unknown) {
     console.error("Publish error:", error);

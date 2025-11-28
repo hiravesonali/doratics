@@ -186,7 +186,7 @@ export default defineEventHandler(async (event) => {
     projectId: newProject.id,
     slug: '/',
     title: 'Home',
-    layoutJson: { html: `Welcome to ${validatedData.name}` }, // Empty HTML for PageBuilder
+    layoutJson: { html: "" }, // Empty HTML for PageBuilder
     seoTitle: validatedData.name,
     seoDescription: `Welcome to ${validatedData.name}`,
     status: 'published' as const,

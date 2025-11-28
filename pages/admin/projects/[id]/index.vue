@@ -4,34 +4,12 @@
 
     <div v-if="project" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
       <!-- Project Header -->
-      <div class="mb-8">
-        <div class="flex items-center justify-between">
-          <div>
-            <NuxtLink to="/admin" class="text-blue-600 hover:text-blue-700 mb-2 inline-block">
-              ← Back to Projects
-            </NuxtLink>
-            <h1 class="text-3xl font-bold text-gray-900">{{ project.name }}</h1>
-            <p class="text-gray-600 mt-1">{{ project.subdomain }}.{{ config.public.baseDomain }}</p>
-          </div>
-
-          <div class="flex gap-2">
-            <button
-              @click="publishProject"
-              :disabled="publishing"
-              class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 disabled:opacity-50"
-            >
-              {{ publishing ? 'Publishing...' : 'Publish' }}
-            </button>
-            <a
-              :href="`http://${project.subdomain}.${config.public.baseDomain}`"
-              target="_blank"
-              class="border border-gray-300 px-6 py-2 rounded-lg hover:bg-gray-50"
-            >
-              Preview
-            </a>
-          </div>
-        </div>
-      </div>
+      <AdminProjectHeader
+        :project="project"
+        :base-domain="config.public.baseDomain"
+        :publishing="publishing"
+        @publish="publishProject"
+      />
 
       <!-- Tabs -->
       <div class="border-b border-gray-200 mb-8">
@@ -73,228 +51,38 @@
       </div>
 
       <!-- Pages Tab -->
-      <div v-if="activeTab === 'pages'" class="space-y-6">
-        <div class="flex justify-between items-center">
-          <h2 class="text-xl font-semibold">Pages</h2>
-          <button
-            @click="showCreatePageModal = true"
-            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-          >
-            + Add Page
-          </button>
-        </div>
-
-        <div v-if="pages && pages.length > 0" class="bg-white rounded-lg shadow divide-y">
-          <div
-            v-for="page in pages"
-            :key="page.id"
-            class="p-4 flex items-center justify-between hover:bg-gray-50"
-          >
-            <div>
-              <h3 class="font-medium">{{ page.title }}</h3>
-              <p class="text-sm text-gray-500">{{ page.slug }}</p>
-              <span
-                :class="[
-                  'inline-block px-2 py-1 text-xs rounded mt-1',
-                  page.status === 'published'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-yellow-100 text-yellow-800'
-                ]"
-              >
-                {{ page.status }}
-              </span>
-            </div>
-            <div class="flex gap-2">
-              <NuxtLink
-                :to="`/admin/projects/${projectId}/pages/${page.id}`"
-                class="text-blue-600 hover:text-blue-700 px-3 py-1"
-              >
-                Edit
-              </NuxtLink>
-            </div>
-          </div>
-        </div>
-
-        <div v-else class="bg-white rounded-lg shadow p-8 text-center text-gray-500">
-          No pages yet. Create your first page to get started.
-        </div>
-      </div>
+      <AdminPagesList
+        v-if="activeTab === 'pages'"
+        :pages="pages"
+        :project-id="projectId"
+        @create-page="showCreatePageModal = true"
+      />
 
       <!-- Settings Tab -->
-      <div v-if="activeTab === 'settings'" class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-6">Project Settings</h2>
-
-        <form @submit.prevent="updateSettings" class="space-y-6">
-          <div>
-            <label class="block text-sm font-medium mb-2">Project Name</label>
-            <input
-              v-model="settings.name"
-              type="text"
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">Custom Domain (Optional)</label>
-            <input
-              v-model="settings.customDomain"
-              type="text"
-              placeholder="www.yourdomain.com"
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-            <p class="text-sm text-gray-500 mt-1">
-              Add a CNAME record pointing to {{ config.public.baseDomain }}
-            </p>
-          </div>
-
-          <button
-            type="submit"
-            :disabled="savingSettings"
-            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {{ savingSettings ? 'Saving...' : 'Save Settings' }}
-          </button>
-        </form>
-      </div>
+      <AdminProjectSettings
+        v-if="activeTab === 'settings'"
+        :settings="settings"
+        :base-domain="config.public.baseDomain"
+        :loading="savingSettings"
+        @submit="updateSettings"
+      />
 
       <!-- Legal Info Tab -->
-      <div v-if="activeTab === 'legal'" class="bg-white rounded-lg shadow p-6">
-        <h2 class="text-xl font-semibold mb-2">Legal Information</h2>
-        <p class="text-gray-600 mb-6">
-          Required for Impressum and Privacy pages (German law compliance)
-        </p>
-
-        <form @submit.prevent="updateLegalInfo" class="space-y-6">
-          <div>
-            <label class="block text-sm font-medium mb-2">Company Name *</label>
-            <input
-              v-model="legalInfo.companyName"
-              type="text"
-              required
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">Owner Name *</label>
-            <input
-              v-model="legalInfo.ownerName"
-              type="text"
-              required
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">Address *</label>
-            <textarea
-              v-model="legalInfo.address"
-              required
-              rows="3"
-              class="w-full px-4 py-2 border rounded-lg"
-            ></textarea>
-          </div>
-
-          <div class="grid grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-2">Email *</label>
-              <input
-                v-model="legalInfo.email"
-                type="email"
-                required
-                class="w-full px-4 py-2 border rounded-lg"
-              />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium mb-2">Phone *</label>
-              <input
-                v-model="legalInfo.phone"
-                type="tel"
-                required
-                class="w-full px-4 py-2 border rounded-lg"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">VAT ID (Optional)</label>
-            <input
-              v-model="legalInfo.vatId"
-              type="text"
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-          </div>
-
-          <button
-            type="submit"
-            :disabled="savingLegal"
-            class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            {{ savingLegal ? 'Saving...' : 'Save Legal Info' }}
-          </button>
-        </form>
-      </div>
+      <AdminLegalInfoForm
+        v-if="activeTab === 'legal'"
+        :legal-info="legalInfo"
+        :loading="savingLegal"
+        @submit="updateLegalInfo"
+      />
     </div>
 
     <!-- Create Page Modal -->
-    <div
-      v-if="showCreatePageModal"
-      class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-      @click.self="showCreatePageModal = false"
-    >
-      <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 class="text-xl font-semibold mb-4">Create New Page</h3>
-
-        <form @submit.prevent="createPage" class="space-y-4">
-          <!-- Error Message Display -->
-          <div v-if="pageCreateError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-            <p class="font-semibold">{{ pageCreateError }}</p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">Page Title *</label>
-            <input
-              v-model="newPage.title"
-              type="text"
-              required
-              placeholder="e.g., Home, About Us, Services"
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-            <p class="text-xs text-gray-500 mt-1">1-200 characters</p>
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium mb-2">URL Slug *</label>
-            <input
-              v-model="newPage.slug"
-              type="text"
-              required
-              placeholder="e.g., /home, /about-us, /services"
-              class="w-full px-4 py-2 border rounded-lg"
-            />
-            <p class="text-xs text-gray-500 mt-1">Auto-sanitizes: converts to lowercase, replaces spaces with hyphens. Use '/' for homepage.</p>
-          </div>
-
-          <div class="flex gap-2 justify-end">
-            <button
-              type="button"
-              @click="showCreatePageModal = false"
-              class="px-4 py-2 border rounded-lg hover:bg-gray-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              :disabled="creatingPage"
-              class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {{ creatingPage ? 'Creating...' : 'Create Page' }}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <AdminCreatePageModal
+      v-model="showCreatePageModal"
+      :loading="creatingPage"
+      :error="pageCreateError"
+      @submit="createPage"
+    />
   </div>
 </template>
 
@@ -314,15 +102,11 @@ const savingLegal = ref(false)
 const showCreatePageModal = ref(false)
 const creatingPage = ref(false)
 const pageCreateError = ref('')
-const newPage = ref({
-  title: '',
-  slug: '',
-})
 
 // Fetch project data
 const { data: projectData } = await useFetch(`/api/projects/${projectId}`, {
   headers: {
-    Authorization: `Bearer demo-token`,
+    Authorization: 'Bearer demo-token',
   },
 })
 
@@ -333,7 +117,7 @@ const { data: pagesData, refresh: refreshPages } = await useFetch(
   `/api/pages/${projectId}`,
   {
     headers: {
-      Authorization: `Bearer demo-token`,
+      Authorization: 'Bearer demo-token',
     },
   }
 )
@@ -343,7 +127,7 @@ const pages = computed(() => pagesData.value?.data || [])
 // Fetch legal info
 const { data: legalData } = await useFetch(`/api/legal/${projectId}`, {
   headers: {
-    Authorization: `Bearer demo-token`,
+    Authorization: 'Bearer demo-token',
   },
 })
 
@@ -368,73 +152,83 @@ async function publishProject() {
       method: 'PATCH',
       body: { published: true },
       headers: {
-        Authorization: `Bearer demo-token`,
+        Authorization: 'Bearer demo-token',
       },
     })
     alert('Project published successfully!')
-  } catch (error: any) {
-    alert(error.data?.message || 'Failed to publish project')
+  } catch (error) {
+    const err = error as { data?: { message?: string } }
+    alert(err.data?.message || 'Failed to publish project')
   } finally {
     publishing.value = false
   }
 }
 
-async function updateSettings() {
+async function updateSettings(formData: { name: string; customDomain: string | null }) {
   savingSettings.value = true
   try {
     await $fetch(`/api/projects/${projectId}`, {
       method: 'PATCH',
-      body: settings.value,
+      body: formData,
       headers: {
-        Authorization: `Bearer demo-token`,
+        Authorization: 'Bearer demo-token',
       },
     })
     alert('Settings saved!')
-  } catch (error: any) {
-    alert(error.data?.message || 'Failed to save settings')
+  } catch (error) {
+    const err = error as { data?: { message?: string } }
+    alert(err.data?.message || 'Failed to save settings')
   } finally {
     savingSettings.value = false
   }
 }
 
-async function updateLegalInfo() {
+async function updateLegalInfo(formData: {
+  companyName: string
+  ownerName: string
+  address: string
+  email: string
+  phone: string
+  vatId: string | null
+}) {
   savingLegal.value = true
   try {
     await $fetch(`/api/legal/${projectId}`, {
       method: 'POST',
-      body: legalInfo.value,
+      body: formData,
       headers: {
-        Authorization: `Bearer demo-token`,
+        Authorization: 'Bearer demo-token',
       },
     })
     alert('Legal information saved!')
-  } catch (error: any) {
-    alert(error.data?.message || 'Failed to save legal information')
+  } catch (error) {
+    const err = error as { data?: { message?: string } }
+    alert(err.data?.message || 'Failed to save legal information')
   } finally {
     savingLegal.value = false
   }
 }
 
-async function createPage() {
+async function createPage(formData: { title: string; slug: string }) {
   creatingPage.value = true
   pageCreateError.value = ''
   try {
     await $fetch(`/api/pages/${projectId}`, {
       method: 'POST',
-      body: newPage.value,
+      body: formData,
       headers: {
-        Authorization: `Bearer demo-token`,
+        Authorization: 'Bearer demo-token',
       },
     })
     showCreatePageModal.value = false
-    newPage.value = { title: '', slug: '' }
     await refreshPages()
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as { data?: { message?: string; statusMessage?: string } }
     // Display validation errors properly
-    if (error.data?.message) {
-      pageCreateError.value = error.data.message
-    } else if (error.data?.statusMessage) {
-      pageCreateError.value = error.data.statusMessage
+    if (err.data?.message) {
+      pageCreateError.value = err.data.message
+    } else if (err.data?.statusMessage) {
+      pageCreateError.value = err.data.statusMessage
     } else {
       pageCreateError.value = 'Failed to create page. Please check your input and try again.'
     }
