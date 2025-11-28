@@ -1,12 +1,11 @@
 <template>
-  <header class="bg-white shadow-sm">
+  <div v-if="themeHtml" v-html="themeHtml"></div>
+  <header v-else class="bg-white shadow-sm">
     <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between h-16">
         <div class="flex">
           <div class="flex-shrink-0 flex items-center">
-            <span class="text-xl font-bold text-gray-900">
-              {{ theme?.layoutJson?.logo || 'Logo' }}
-            </span>
+            <span class="text-xl font-bold text-gray-900">Logo</span>
           </div>
         </div>
         <div class="flex items-center space-x-8">
@@ -21,7 +20,11 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{
+const props = defineProps<{
   theme: any
 }>()
+
+const themeHtml = computed(() => {
+  return props.theme?.layoutJson?.html || ''
+})
 </script>

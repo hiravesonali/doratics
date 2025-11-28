@@ -1,7 +1,7 @@
 import { nanoid } from 'nanoid'
 import { z } from 'zod'
 import { eq } from 'drizzle-orm'
-import { projects, pages } from '../../database/schema'
+import { projects, pages, themes } from '../../database/schema'
 
 // Reserved subdomains that cannot be used by users
 const RESERVED_SUBDOMAINS = [
@@ -164,6 +164,19 @@ export default defineEventHandler(async (event) => {
     })
   }
 
+  // Get default themes (simple header and simple footer)
+  const defaultThemes = await db
+    .select()
+    .from(themes)
+    .where(eq(themes.name, 'Simple Header'))
+    .limit(1)
+
+  const defaultFooterThemes = await db
+    .select()
+    .from(themes)
+    .where(eq(themes.name, 'Simple Footer'))
+    .limit(1)
+
   const newProject = {
     id: nanoid(),
     userId,
@@ -171,8 +184,8 @@ export default defineEventHandler(async (event) => {
     industryType: validatedData.industryType,
     subdomain: validatedData.subdomain,
     customDomain: null,
-    themeHeaderId: null,
-    themeFooterId: null,
+    themeHeaderId: defaultThemes[0]?.id || null,
+    themeFooterId: defaultFooterThemes[0]?.id || null,
     published: false,
     createdAt: new Date(),
     updatedAt: new Date(),

@@ -37,7 +37,18 @@
             Settings
           </button>
           <button
-            @click="activeTab = 'legal'"
+            @click="activeTab = 'themes'"
+            :class="[
+              activeTab === 'themes'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300',
+              'whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm'
+            ]"
+          >
+            Themes
+          </button>
+          <button
+            @click="activeTab === 'legal'"
             :class="[
               activeTab === 'legal'
                 ? 'border-blue-500 text-blue-600'
@@ -65,6 +76,15 @@
         :base-domain="config.public.baseDomain"
         :loading="savingSettings"
         @submit="updateSettings"
+      />
+
+      <!-- Themes Tab -->
+      <AdminThemesTab
+        v-if="activeTab === 'themes'"
+        :project-id="projectId"
+        :current-header-id="project.themeHeaderId"
+        :current-footer-id="project.themeFooterId"
+        @saved="handleThemesSaved"
       />
 
       <!-- Legal Info Tab -->
@@ -235,5 +255,10 @@ async function createPage(formData: { title: string; slug: string }) {
   } finally {
     creatingPage.value = false
   }
+}
+
+function handleThemesSaved() {
+  // Refresh project data to get updated theme IDs
+  // The ThemesTab component handles its own state
 }
 </script>
