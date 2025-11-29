@@ -6,7 +6,7 @@
     </div>
 
     <!-- HTML Page Renderer (from PageBuilder) -->
-    <div v-else-if="layout.html" v-html="layout.html"></div>
+    <div v-else-if="layout.html && layout.html.trim() !== ''" v-html="layout.html"></div>
 
     <!-- Block-based Page Renderer (legacy/fallback) -->
     <div v-else-if="layout.blocks">
