@@ -1,6 +1,6 @@
-# Handymen Website Builder MVP
+# Doratics Website Builder MVP
 
-A vertical SaaS website builder for handymen and local service businesses (electricians, plumbers, cleaners, painters, gardeners).
+A vertical SaaS website builder for Doratics and local service businesses (electricians, plumbers, cleaners, painters, gardeners).
 
 ## Features
 
@@ -79,7 +79,7 @@ Access:
 ## Project Structure
 
 ```
-handymen.app/
+doratics.app/
 ├── server/
 │   ├── api/                    # API endpoints
 │   │   ├── projects/          # Project CRUD
